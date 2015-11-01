@@ -34,7 +34,7 @@ dest=.
 if [ $# -eq 0 ]; then
     echo "Converts a file to the half-life 1 sound format."
     echo "Usage:"
-    echo "convert-to-hlsound.sh <files...> [directory]"
+    echo "${0##*/} <files...> [directory]"
     exit
 else
     if [ -d "${!#}" ]; then # is the last argument a directory?
