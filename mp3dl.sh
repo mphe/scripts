@@ -1,5 +1,5 @@
 #!/bin/sh
-FORMAT="%(title)s.%(ext)s" 
+FORMAT="%(title)s.%(ext)s"
 
 if [ $# -eq 0 ] || [ "$1" == "-h" ] || [ "$1" == "--help" ]; then
     echo Download the audio track of a video and convert it to mp3.
