@@ -5,7 +5,7 @@ import os
 
 def createHeader(guard, namespace):
     return "#ifndef {}_HPP\n#define {}_HPP\n\n{}\n\n#endif".format(guard, guard, namespace)
-    
+
 def createSource(name, namespace):
     return '#include "{}.hpp"\n\n{}'.format(name, namespace)
 
@@ -21,13 +21,18 @@ if len(sys.argv) > 1:
         path += "/"
 
     namespace = createNamespace(sys.argv[2]) if len(sys.argv) > 2 else ""
-    guard = name.replace(" ", "_").upper()
+
+    if namespace:
+        guard = "{}_{}".format(sys.argv[2], name.replace(" ", "_")).upper()
+    else:
+        guard = name.replace(" ", "_").upper()
+
     name = name.replace(" ", "") # Remove spaces for filename
     path += name
 
     with open(path + ".hpp", "w") as f:
         f.write(createHeader(guard, namespace))
-    
+
     with open(path + ".cpp", "w") as f:
         f.write(createSource(name, namespace))
 
