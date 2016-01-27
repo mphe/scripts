@@ -12,7 +12,7 @@ else
     dowork () {
         vimdiff "$(echo $1 | sed s/.pacnew$//)" "$1"
 
-        read -p "Remove $1 ? " -n 1 -r
+        read -p "Remove $1 ? [y/n] " -n 1 -r
         echo
         [[ $REPLY =~ ^[YyJj]$ ]] && sudo rm "$1"
     }
