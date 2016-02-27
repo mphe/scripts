@@ -14,8 +14,9 @@ def main():
         if path:
             path += "/"
         try:
-            print("\"{}\" -> \"{}\"".format(v, "{}{} - {}".format(path, str(k).zfill(len(str(len(sys.argv) - 1))), name)))
-            os.rename(v, "{}{} - {}".format(path, str(k), name))
+            fname = "{}{} - {}".format(path, str(k).zfill(len(str(len(sys.argv) - 1))), name)
+            print("\"{}\" -> \"{}\"".format(v, fname))
+            os.rename(v, fname)
         except Exception as e:
             print(str(e))
 
