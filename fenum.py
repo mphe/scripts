@@ -2,6 +2,7 @@
 
 import os
 import sys
+import math
 
 def main():
     if len(sys.argv) == 1 or sys.argv[1].lower() == "-h" or sys.argv[1].lower() == "--help":
@@ -14,7 +15,10 @@ def main():
         if path:
             path += "/"
         try:
-            fname = "{}{} - {}".format(path, str(k).zfill(len(str(len(sys.argv) - 1))), name)
+            fname = "{}{} - {}".format(
+                    path,
+                    str(k).zfill(int(math.log10(len(sys.argv) - 1)) + 1),
+                    name)
             print("\"{}\" -> \"{}\"".format(v, fname))
             os.rename(v, fname)
         except Exception as e:
