@@ -17,10 +17,10 @@ newline() {
     echo
     if $ASCII; then
         if [[ $LINE -lt $NUMLINES ]]; then
+            printasciiline $LINE
             ((LINE++))
-            printasciiline $LINE
         elif $INDENT; then
-            printasciiline $LINE
+            printasciiline -1
         fi
     fi
 }
@@ -28,9 +28,15 @@ newline() {
 # Prints a line from the ascii art
 # arg1 = line number
 printasciiline() {
-    local asciistr="$(echo "$ASCIIART" | sed -n ${1}p)"
-    echo -ne "$asciistr"
-    ((LINEWIDTH += ${#asciistr}))
+    if [[ $# -gt 0 ]]; then
+        local asciistr="${ASCIIART[$1]}"
+        echo -ne "$asciistr"
+        ((LINEWIDTH += ${#asciistr}))
+    else
+        for i in "${ASCIIART[@]}"; do
+            echo -e "$i"
+        done
+    fi
 }
 
 # Main loop
@@ -79,7 +85,7 @@ main() {
     TABSIZE=8
     COLUMNS=$(tput cols)
 
-    if $ASCII && [[ $COLUMNS -lt $((TABSIZE + $(echo -e "$ASCIIART" | wc -L))) ]] ||
+    if $ASCII && [[ $COLUMNS -lt $((TABSIZE + $(printasciiline | wc -L))) ]] ||
         [[ $COLUMNS -lt $TABSIZE ]]; then
         echo "Terminal size too small."
         exit 1
@@ -96,8 +102,8 @@ main() {
     # print ascii art
     if $ASCII; then
         LINE=1
-        NUMLINES=$(echo "$ASCIIART" | wc -l)
-        echo -e "$ASCIIART"
+        NUMLINES=${#ASCIIART[@]}
+        printasciiline
         tput sc # restored when text has fewer lines than the ascii art
         for i in $(seq $NUMLINES); do
             # tput sc and tput rc are not reliable here, because if there's
@@ -105,7 +111,7 @@ main() {
             # the wrong position is saved.
             tput cuu1
         done
-        printasciiline 1
+        printasciiline 0
     fi
 
     if [[ -n "$TEXT" ]]; then
@@ -114,13 +120,15 @@ main() {
         loop $SNDFILE < /dev/stdin
     fi
 
-    if $ASCII && [[ $LINE -le $NUMLINES ]]; then
+    if $ASCII && [[ $LINE -lt $NUMLINES ]]; then
         tput rc
     fi
 
     echo
 
-    $SOUND && rm $SNDFILE
+    if $SOUND; then
+        rm $SNDFILE
+    fi
 }
 
 readoptions() {
@@ -162,23 +170,27 @@ readoptions() {
     done
 }
 
-# Don't use tabs here, otherwise  you're going to have a bad time.
-ASCIIART='        ██████████████████               
-    ████░░░░░░░░░░░░░░░░░░████           
-  ██░░░░░░░░░░░░░░░░░░░░░░░░░░██         
-  ██░░░░░░░░░░░░░░░░░░░░░░░░░░██         
-██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██       
-██░░░░░░░░░░░░░░░░░░░░██████░░░░██       
-██░░░░░░░░░░░░░░░░░░░░██████░░░░██       
-██░░░░██████░░░░██░░░░██████░░░░██       
-  ██░░░░░░░░░░██████░░░░░░░░░░██         
-████░░██░░░░░░░░░░░░░░░░░░██░░████       
-██░░░░██████████████████████░░░░██       
-██░░░░░░██░░██░░██░░██░░██░░░░░░██       
-  ████░░░░██████████████░░░░████         
-      ████░░░░░░░░░░░░░░████             
-          ██████████████                 
-                                         '
+# Don't use tabs here, otherwise you're going to have a bad time.
+# The last line is used for indentation when the -i option is given. Otherwise
+# it's printend once to add spacing between text and image.
+ASCIIART=(
+'        ██████████████████               '
+'    ████░░░░░░░░░░░░░░░░░░████           '
+'  ██░░░░░░░░░░░░░░░░░░░░░░░░░░██         '
+'  ██░░░░░░░░░░░░░░░░░░░░░░░░░░██         '
+'██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██       '
+'██░░░░░░░░░░░░░░░░░░░░██████░░░░██       '
+'██░░░░░░░░░░░░░░░░░░░░██████░░░░██       '
+'██░░░░██████░░░░██░░░░██████░░░░██       '
+'  ██░░░░░░░░░░██████░░░░░░░░░░██         '
+'████░░██░░░░░░░░░░░░░░░░░░██░░████       '
+'██░░░░██████████████████████░░░░██       '
+'██░░░░░░██░░██░░██░░██░░██░░░░░░██       '
+'  ████░░░░██████████████░░░░████         '
+'      ████░░░░░░░░░░░░░░████             '
+'          ██████████████                 '
+'                                         ')
+
 
 # base64 encoded sans sound
 extractsound() {
