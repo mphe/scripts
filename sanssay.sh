@@ -1,8 +1,9 @@
 #!/bin/bash
 
 printhelp() {
+    local self="${0##*/}"
     echo "Output text with Sans's voice. If no text is specified as parameter, stdin is read."
-    echo -e "Usage:\n\t${0##*/} [options] [string]..."
+    echo -e "Usage:\n\t$self [options] [string]..."
     echo -e "\nOptions:"
     echo -e "\t-h, --help\t\tShow help."
     echo -e "\t-s, --silent\t\tDisable sound."
@@ -12,6 +13,11 @@ printhelp() {
     echo -e "\t-i, --indent\t\tKeep indentation after the text passed the ASCII art."
     echo -e "\t-t, --sleep <number>\tHow long to sleep between each char. Default is 0.07. (See also 'man sleep')"
     echo -e "\t-p, --pause <number>\tHow long to sleep on newlines and tabs. Default is 0."
+    echo -e "\nExamples:"
+    echo -e "\t$self Do you wanna have a bad time?"
+    echo -e "\tls | $self"
+    echo -e "\tls | $self -p 0.3"
+    echo -e "\tclear; sanssay.sh -p 0.5 -o 5 $'On days like these, \\\nkids like you...'; clear; sanssay.sh -o 5 -t 0.15 Should be burning in hell!"
 }
 
 newline() {
