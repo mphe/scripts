@@ -25,7 +25,7 @@ newline() {
     fi
 }
 
-# Prints a line from the ascii art
+# Prints a line from the ascii art. Without arguments, the whole thing is printed.
 # arg1 = line number
 printasciiline() {
     if [[ $# -gt 0 ]]; then
@@ -36,6 +36,19 @@ printasciiline() {
         for i in "${ASCIIART[@]}"; do
             echo -e "$i"
         done
+    fi
+}
+
+# Triggered when script exits, except on SIGKILL.
+cleanup() {
+    if $ASCII && [[ $LINE -lt $NUMLINES ]]; then
+        tput rc
+    fi
+
+    echo
+
+    if [[ -n "$SNDFILE" ]]; then
+        rm $SNDFILE
     fi
 }
 
@@ -80,6 +93,8 @@ loop() {
 }
 
 main() {
+    trap cleanup EXIT
+
     readoptions "$@"
 
     TABSIZE=8
@@ -93,7 +108,7 @@ main() {
 
     # extract wav
     if $SOUND; then
-        local SNDFILE=$(mktemp /tmp/sans.wav.XXXXXXXX)
+        SNDFILE=$(mktemp /tmp/sans.wav.XXXXXXXX)
         extractsound $SNDFILE
     fi
 
@@ -118,16 +133,6 @@ main() {
         loop $SNDFILE <<< "$TEXT"
     else
         loop $SNDFILE < /dev/stdin
-    fi
-
-    if $ASCII && [[ $LINE -lt $NUMLINES ]]; then
-        tput rc
-    fi
-
-    echo
-
-    if $SOUND; then
-        rm $SNDFILE
     fi
 }
 
