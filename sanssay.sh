@@ -9,8 +9,9 @@ printhelp() {
     echo -e "\t-n, --noascii\t\tDisable ASCII art."
     echo -e "\t-o, --offset\t\tWhich line to start printing text. Default is 1."
     echo -e "\t-w, --whitespace\tTreat whitespace as character (play sound and sleep)"
-    echo -e "\t-i, --indent\t\tKeep indentation after passing the ASCII art."
+    echo -e "\t-i, --indent\t\tKeep indentation after the text passed the ASCII art."
     echo -e "\t-t, --sleep <number>\tHow long to sleep between each char. Default is 0.07. (See also 'man sleep')"
+    echo -e "\t-p, --pause <number>\tHow long to sleep on newlines and tabs. Default is 0."
 }
 
 newline() {
@@ -61,11 +62,13 @@ loop() {
 
     while IFS='' read -srn 1 -d '' char; do
         if [[ "$char" == $'\n' ]]; then
+            sleep $PAUSE
             newline
             continue
         else
             if ! $ANSI; then
                 if [[ "$char" == $'\t' ]]; then
+                    sleep $PAUSE
                     NUMCHARS=$((TABSIZE - LINEWIDTH % TABSIZE))
                 else
                     NUMCHARS=1
@@ -79,7 +82,7 @@ loop() {
 
             echo -ne "$char"
 
-            if $WHITESPACE || ! [[ "$char" =~ ^[\ \\t]*$ ]]; then
+            if $WHITESPACE || ! ([[ "$char" == ' ' ]] || [[ "$char" == $'\t' ]]); then
                 if [[ "$char" == $'\e' ]]; then
                     ANSI=true
                 elif $ANSI && [[ "$char" =~ [a-zA-Z] ]]; then
@@ -143,6 +146,7 @@ readoptions() {
     ASCII=true
     WHITESPACE=false
     INDENT=false
+    PAUSE=0
     STARTLINE=1
     TEXT=''
 
@@ -163,6 +167,10 @@ readoptions() {
                 ;;
             -t|--sleep )
                 SLEEP="$2"
+                shift
+                ;;
+            -p|--pause )
+                PAUSE="$2"
                 shift
                 ;;
             -o|--offset )
