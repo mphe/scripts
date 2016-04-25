@@ -7,6 +7,7 @@ printhelp() {
     echo -e "\t-h, --help\t\tShow help."
     echo -e "\t-s, --silent\t\tDisable sound."
     echo -e "\t-n, --noascii\t\tDisable ASCII art."
+    echo -e "\t-o, --offset\t\tWhich line to start printing text. Default is 1."
     echo -e "\t-w, --whitespace\tTreat whitespace as character (play sound and sleep)"
     echo -e "\t-i, --indent\t\tKeep indentation after passing the ASCII art."
     echo -e "\t-t, --sleep <number>\tHow long to sleep between each char. Default is 0.07. (See also 'man sleep')"
@@ -116,17 +117,17 @@ main() {
 
     # print ascii art
     if $ASCII; then
-        LINE=1
+        LINE=$((1 + STARTLINE))
         NUMLINES=${#ASCIIART[@]}
         printasciiline
         tput sc # restored when text has fewer lines than the ascii art
-        for i in $(seq $NUMLINES); do
+        for i in $(seq $((NUMLINES - STARTLINE))); do
             # tput sc and tput rc are not reliable here, because if there's
             # not enough space left so that the screen is scrolled down,
             # the wrong position is saved.
             tput cuu1
         done
-        printasciiline 0
+        printasciiline $STARTLINE
     fi
 
     if [[ -n "$TEXT" ]]; then
@@ -142,6 +143,7 @@ readoptions() {
     ASCII=true
     WHITESPACE=false
     INDENT=false
+    STARTLINE=1
     TEXT=''
 
     while [[ $# -gt 0 ]]; do
@@ -161,6 +163,10 @@ readoptions() {
                 ;;
             -t|--sleep )
                 SLEEP="$2"
+                shift
+                ;;
+            -o|--offset )
+                STARTLINE="$2"
                 shift
                 ;;
             -i|--indent )
