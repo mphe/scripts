@@ -138,6 +138,13 @@ main() {
 
     readoptions "$@"
 
+    # Check if no input was passed.
+    if [[ -z "$TEXT" ]] && [[ -t 0 ]]; then
+        $SOUND && rm "$SNDFILE"
+        set_character sans_wink
+        TEXT="$(echo -e "No text specified.\nUse '${0##*/} -h' or '${0##*/} --help' to view the help.")"
+    fi
+
     TABSIZE=8
     COLUMNS=$(tput cols)
 
@@ -228,6 +235,16 @@ readoptions() {
         esac
         shift
     done
+
+    set_character "$CHARACTER" "$VOICE"
+}
+
+# Setup a specific character with a voice.
+# arg1: name
+# arg2: voice (optional)
+set_character() {
+    local CHARACTER="$1"
+    local VOICE="$2"
 
     if [[ -z "$VOICE" ]]; then
         case "$CHARACTER" in
