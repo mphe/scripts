@@ -1,6 +1,6 @@
 #!/bin/sh
 
-proxy=137.116.76.252:3128
+proxy=31.207.0.99:3128
 
 if [ $# -eq 0 ] || [ "$1" == "-h" ] || [ "$1" == "--help" ]; then
     echo "Run a given program with a http proxy by setting the http(s)_proxy variable."
