@@ -12,7 +12,7 @@ printhelp() {
     echo -e "\t-w, --whitespace\tTreat whitespace as character (play sound and sleep)"
     echo -e "\t-i, --indent\t\tKeep indentation after the text passed the ASCII art."
     echo -e "\t-t, --sleep <number>\tHow long to sleep between each char. Default is 0.07. (See also 'man sleep')"
-    echo -e "\t-p, --pause <number>\tHow long to sleep on newlines and tabs. Default is 0."
+    echo -e "\t-p, --pause <number>\tHow long to sleep on punctuation (,.;:!?). Default is 0.4. Use the same value as -t to disable this behaviour (0.07 by default)."
     echo -e "\t-c, --char <name>\tWhich character to use. Default is Sans. See further down for a list of available characters."
     echo -e "\t-v, --voice <name>\tWhich voice to use. Default is the selected character's voice. See further down for a list of available voices."
 
@@ -42,7 +42,7 @@ printhelp() {
     echo -e "\t$self Do you wanna have a bad time?"
     echo -e "\tls | $self"
     echo -e "\tls | $self -p 0.3"
-    echo -e "\tclear; sanssay.sh -p 0.5 -o 5 $'On days like these, \\\nkids like you...'; clear; sanssay.sh -o 5 -t 0.15 Should be burning in hell!"
+    echo -e "\tclear; $self -o 5 $'On days like these,\\\nkids like you...'; clear; $self -c sans_badtime -o 5 -t 0.15 Should be burning in hell!"
 }
 
 newline() {
@@ -89,16 +89,23 @@ cleanup() {
 loop() {
     local ANSI=false
     local NUMCHARS=1
+    local char
+    local LASTCHAR=''
 
     while IFS='' read -srn 1 -d '' char; do
+        # The input always has a \n at the end, therefore it also works as
+        # expected when the last character is in [,;.:!?].
+        if [[ "$LASTCHAR" =~ ^[,\;.:!?]$ ]] && [[ "$char" =~ ^[[:space:]]$ ]] && [[ $PAUSE != $SLEEP ]]; then
+            sleep $(bc <<< "$PAUSE - $SLEEP")
+        fi
+        LASTCHAR="$char"
+
         if [[ "$char" == $'\n' ]]; then
-            sleep $PAUSE
             newline
             continue
         else
             if ! $ANSI; then
                 if [[ "$char" == $'\t' ]]; then
-                    sleep $PAUSE
                     NUMCHARS=$((TABSIZE - LINEWIDTH % TABSIZE))
                 else
                     NUMCHARS=1
@@ -112,7 +119,7 @@ loop() {
 
             echo -ne "$char"
 
-            if $WHITESPACE || ! ([[ "$char" == ' ' ]] || [[ "$char" == $'\t' ]]); then
+            if $WHITESPACE || ! [[ "$char" =~ ^[[:space:]]$ ]]; then
                 if [[ "$char" == $'\e' ]]; then
                     ANSI=true
                 elif $ANSI && [[ "$char" =~ [a-zA-Z] ]]; then
@@ -170,7 +177,7 @@ readoptions() {
     ASCII=true
     WHITESPACE=false
     INDENT=false
-    PAUSE=0
+    PAUSE=0.4
     STARTLINE=1
     TEXT=''
     local VOICE=
