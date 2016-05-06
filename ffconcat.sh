@@ -1,7 +1,7 @@
 #!/bin/bash
 
 main() {
-    if [[ $# == 0 ]]; then
+    if [[ $# == 0 ]] || [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]]; then
         printhelp
         exit
     fi
@@ -11,7 +11,7 @@ main() {
     local VERBOSE=false
 
     while [[ $# > 1 ]]; do
-        case $1 in
+        case "$1" in
             -h|--help )
                 printhelp
                 exit
@@ -23,7 +23,7 @@ main() {
                 NUMLOOPS=$2
                 shift
                 ;;
-            - )
+            -* )
                 echo "Unknown option: $1"
                 ;;
             * )
