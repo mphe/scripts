@@ -15,6 +15,7 @@ printhelp() {
     echo -e "\t-p, --pause <number>\tHow long to sleep on punctuation (,.;:!?). Default is 0.4. Use the same value as -t to disable this behaviour (0.07 by default)."
     echo -e "\t-c, --char <name>\tWhich character to use. Default is Sans. See further down for a list of available characters."
     echo -e "\t-v, --voice <name>\tWhich voice to use. Default is the selected character's voice. See further down for a list of available voices."
+    echo -e "\t    --pun\t\tTell a random pun. Implies '-c sans_wink' if not otherwise specified. It has no effect if a string is given as parameter. Requires curl."
 
     echo -e "\nCharacters:"
     echo -e "\tflowey"
@@ -43,6 +44,7 @@ printhelp() {
     echo -e "\tls | $self"
     echo -e "\tls | $self -p 0.3"
     echo -e "\tclear; $self -o 5 $'On days like these,\\\nkids like you...'; clear; $self -c sans_badtime -o 5 -t 0.15 Should be burning in hell!"
+    echo -e "\t$self --pun; $self -c papyrus_angry SAAAAANNSSS\!\!\!\!"
 }
 
 newline() {
@@ -188,7 +190,7 @@ readoptions() {
     STARTLINE=1
     TEXT=''
     local VOICE=
-    local CHARACTER=sans
+    local CHARACTER=
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -228,6 +230,10 @@ readoptions() {
                 CHARACTER="$2"
                 shift
                 ;;
+            --pun )
+                TEXT=$(curl -s http://www.punoftheday.com/cgi-bin/randompun.pl | grep -o -P '(?<=<p>).*(?=</p>)')
+                [[ -z "$CHARACTER" ]] && CHARACTER=sans_wink
+                ;;
             * )
                 TEXT="$@"
                 break
@@ -236,7 +242,7 @@ readoptions() {
         shift
     done
 
-    set_character "$CHARACTER" "$VOICE"
+    set_character "${CHARACTER:-sans}" "$VOICE"
 }
 
 # Setup a specific character with a voice.
