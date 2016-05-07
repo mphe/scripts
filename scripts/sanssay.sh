@@ -2,7 +2,7 @@
 
 printhelp() {
     local self="${0##*/}"
-    echo "Output text with Sans's voice. If no text is specified as parameter, stdin is read."
+    echo "Output text as Sans, Papyrus, Toriel, Flowey, Muffet or Undyne. If no text is specified as parameter, stdin is read."
     echo -e "Usage:\n\t$self [options] [string]..."
     echo -e "\nOptions:"
     echo -e "\t-h, --help\t\tShow help."
