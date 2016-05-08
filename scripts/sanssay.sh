@@ -42,7 +42,7 @@ printhelp() {
     echo -e "\nExamples:"
     echo -e "\t$self Do you wanna have a bad time?"
     echo -e "\tls | $self"
-    echo -e "\tls | $self -p 0.3"
+    echo -e "\tls | $self -c toriel"
     echo -e "\tclear; $self -o 5 $'On days like these,\\\nkids like you...'; clear; $self -c sans_badtime -o 5 -t 0.15 Should be burning in hell!"
     echo -e "\t$self --pun; $self -c papyrus_angry SAAAAANNSSS\!\!\!\!"
 }
