@@ -1,3 +1,2 @@
 #!/bin/sh
-curl gimmeip.com
-echo "" # Force new line
+curl -s gimmeip.com | grep -oE "([0-9]+\.){3}[0-9]+"
