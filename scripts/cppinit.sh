@@ -106,6 +106,14 @@ project(\"$NAME\")
 option(BUILD_TESTS \"Build tests\" ON)
 option(USE_CCACHE \"Use ccache if available\" ON)
 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY \${CMAKE_BINARY_DIR}/bin)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY \${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY \${CMAKE_BINARY_DIR}/lib)
+
+# Colored compiler output
+set(CMAKE_CXX_FLAGS_DEBUG \"\${CMAKE_CXX_FLAGS_DEBUG} -fdiagnostics-color=auto\")
+set(CMAKE_CXX_FLAGS_RELEASE \"\${CMAKE_CXX_FLAGS_RELEASE} -fdiagnostics-color=auto\")
+
 # Use ccache if available
 if(USE_CCACHE)
     find_program(CCACHE_FOUND ccache)
@@ -146,7 +154,13 @@ include_directories(
 
 add_executable(\${PROJECT_NAME} \${PROJECT_SOURCES})
 target_link_libraries(\${PROJECT_NAME} \${EXT_LIBRARIES})
-$([[ -n $STD ]] && echo -n "set_property(TARGET \${PROJECT_NAME} PROPERTY CXX_STANDARD $STD)")"
+$([[ -n $STD ]] && echo -n "set_property(TARGET \${PROJECT_NAME} PROPERTY CXX_STANDARD $STD)")
+
+add_custom_target(run
+    COMMAND \${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/\${PROJECT_NAME}
+    DEPENDS \${PROJECT_NAME}
+    WORKING_DIRECTORY \${CMAKE_SOURCE_DIR}
+)"
 }
 
 # Creates the CMakeLists.txt for the test directory
@@ -154,9 +168,10 @@ $([[ -n $STD ]] && echo -n "set_property(TARGET \${PROJECT_NAME} PROPERTY CXX_ST
 # arg2: standard (optional)
 cmake_test() {
     echo -e "set(CXX_STANDARD_REQUIRED $REQUIRE)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY \${CMAKE_BINARY_DIR}/bin/test)
 
-macro(gen_test TESTNAME SOURCE_LIST)
-    add_executable(\${TESTNAME} \${SOURCE_LIST})
+macro(gen_test TESTNAME SOURCE)
+    add_executable(\${TESTNAME} \${SOURCE} \${ARGN})
     add_test(NAME \${TESTNAME} COMMAND \${TESTNAME})"
 [[ -n $STD ]] && echo -e "    set_property(TARGET \${TESTNAME} PROPERTY CXX_STANDARD $STD)"
 echo -ne "endmacro()
