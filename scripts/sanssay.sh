@@ -142,8 +142,6 @@ main() {
 
     # Check if no input was passed.
     if [[ -z "$TEXT" ]] && [[ -t 0 ]]; then
-        $SOUND && rm "$SNDFILE"
-        set_character sans_wink
         TEXT="$(echo -e "No text specified.\nUse '${0##*/} -h' or '${0##*/} --help' to view the help.")"
     fi
 
