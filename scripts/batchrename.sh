@@ -37,13 +37,8 @@ cleanup() {
 main() {
     trap cleanup EXIT
 
-    if [ $# -eq 0 ]; then
-        printhelp
-        exit
-    fi
-
     local DRY=false
-    while [ $# -gt 1 ]; do
+    while [ $# -gt 0 ]; do
         case "$1" in
             -h|--help )
                 printhelp
@@ -63,6 +58,11 @@ main() {
         shift
     done
 
+    if [ $# -eq 0 ]; then
+        printhelp
+        exit
+    fi
+
     # TODO : Consider using fifos
     FILELIST=$(mktemp /tmp/batchrename.XXXXXXXX)
     printedithelp > $FILELIST
@@ -75,7 +75,7 @@ main() {
         # Strip help and remove empty lines
         local NEWFILELIST="$(cat $FILELIST | tail -n +$(printedithelp | wc -l) | grep -v '^$')"
 
-        if [ $LEN -ne $(echo "$NEWFILELIST" | wc -l) ]; then
+        if [ -z "$NEWFILELIST" ] || [ $LEN -ne $(echo "$NEWFILELIST" | wc -l) ]; then
             echo "Error: Filelist length doesn't match input filelist length!"
             
             local REPLY=
