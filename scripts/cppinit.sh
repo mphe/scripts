@@ -4,13 +4,13 @@ printhelp() {
     echo "Creates a C++ project directory structure."
     echo -e "Usage:\n\t${0##*/} name [options]"
     echo -e "\nOptions:"
-    echo -e "\t-h, --help\tShow help"
-    echo -e "\t-i, --include\tCreate a 'include' directory"
-    echo -e "\t-g, --git\tRun 'git init'"
-    echo -e "\t-c, --cmake\tCreate a basic CMakeLists.txt files"
+    echo -e "\t-h, --help\t\tShow help"
+    echo -e "\t-i, --include\t\tCreate a 'include' directory"
+    echo -e "\t-g, --git\t\tRun 'git init'"
+    echo -e "\t-c, --cmake\t\tCreate a basic CMakeLists.txt files"
     echo -e "\t-cg, --cmake-gen\tGenerate a Makefile using cmake"
     echo -e "\t-s, --std <version>\tUse this C++ standard"
-    echo -e "\t-n, --norequire\tDon't require the standard set with -s/--std"
+    echo -e "\t-n, --norequire\t\tDon't require the standard set with -s/--std"
 }
 
 main() {
