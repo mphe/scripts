@@ -11,7 +11,7 @@ printhelp() {
     echo -e "\t-m\t\tMaximum amount of parallel downloads. Default is 4."
     echo -e "\t-g\t\tDon't download anything, just print the download links to stdout."
     echo -e "\t-l\t\tSame as -g but print the video hoster links, not direct links. (Faster than -g)"
-    echo -e "\t-s\t\tSkip a file if an error occurs."
+    echo -e "\t-r\t\tDon't skip the file if an error occurs. Use with caution because killing the process might be the only way to cancel the script."
     echo -e "\t-e <list>\tDownload only the episodes specified in <list>. <list> is a comma separated list (without spaces) of episode numbers."
     echo -e "\nExamples:"
     echo -e "\t$SELF $EXURL vivo -p"
@@ -92,7 +92,7 @@ main() {
     local PARALLEL=false
     local EXTRACTONLY=0
     local MAXDOWNLOADS=4
-    local SKIP=false
+    local SKIP=true
     local EPISODES=
 
     while [[ $# -gt 0 ]]; do
@@ -108,8 +108,8 @@ main() {
             -l )
                 EXTRACTONLY=2
                 ;;
-            -s )
-                SKIP=true
+            -r )
+                SKIP=false
                 ;;
             -m )
                 MAXDOWNLOADS=$2
