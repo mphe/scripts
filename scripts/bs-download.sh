@@ -1,21 +1,25 @@
 #!/bin/bash
 
 printhelp() {
-    echo -e "Download all episodes of a season from burning series using youtube-dl."
-    echo -e "Usage:\n\t${0##*/} [-h | --help] <URL> <hoster> [options]"
+    local SELF="${0##*/}"
+    local EXURL="https://bs.to/serie/Mirai-Nikki/1"
+    echo -e "Download all or only certain episodes of a season from burning series using youtube-dl."
+    echo -e "Usage:\n\t$SELF [-h | --help] <URL> <hoster> [options]"
     echo -e "Options:"
-    echo -e "\t-h, --help\tShow help"
-    echo -e "\t-p\t\tDownload multiple files in parallel"
+    echo -e "\t-h, --help\tShow help."
+    echo -e "\t-p\t\tDownload multiple files in parallel."
     echo -e "\t-m\t\tMaximum amount of parallel downloads. Default is 4."
     echo -e "\t-g\t\tDon't download anything, just print the download links to stdout."
     echo -e "\t-l\t\tSame as -g but print the video hoster links, not direct links. (Faster than -g)"
     echo -e "\t-s\t\tSkip a file if an error occurs."
-    echo -e "Example:"
-    echo -e "\t${0##*/} https://bs.to/serie/Akame-ga-Kill/1 vivo -p"
-    echo -e "\tmpv \$(${0##*/} https://bs.to/serie/Akame-ga-Kill/1 vivo -l)"
-    echo -e "\t\tNote: this might take a while until all links are extracted."
-    echo -e "\tmplayer \$(${0##*/} https://bs.to/serie/Akame-ga-Kill/1 vivo -g)"
-    echo -e "\t\tNote: takes even longer than -l."
+    echo -e "\t-e <list>\tDownload only the episodes specified in <list>. <list> is a comma separated list (without spaces) of episode numbers."
+    echo -e "\nExamples:"
+    echo -e "\t$SELF $EXURL vivo -p"
+    echo -e "\n\t$SELF $EXURL vivo -p -m 2 -e 20,21,22,23"
+    echo -e "\n\tmpv \$($SELF $EXURL vivo -l)"
+    echo -e "\t\tNOTE: this might take a while until all links are extracted."
+    echo -e "\n\tmplayer \$($SELF $EXURL vivo -g)"
+    echo -e "\t\tNOTE: takes even longer than -l."
 }
 
 # arg1: link to the episode's page
@@ -81,6 +85,7 @@ main() {
         [[ $REPLY =~ ^[Yy]$ ]] && exit
     fi
 
+    # Download the page and extract each episode's link
     local SRC="$(curl -s "$1" | grep -i "$2" | grep -i href | sed -r "s/.*href=\"(.+)\".*/\1/")"
     shift 2
 
@@ -88,6 +93,7 @@ main() {
     local EXTRACTONLY=0
     local MAXDOWNLOADS=4
     local SKIP=false
+    local EPISODES=
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -109,6 +115,10 @@ main() {
                 MAXDOWNLOADS=$2
                 shift
                 ;;
+            -e )
+                EPISODES="$2"
+                shift
+                ;;
             * )
                 echo "Unknown option: $1"
                 ;;
@@ -122,9 +132,14 @@ main() {
         trap cleanup EXIT
     fi
 
-    echo "$SRC" | while read -r line; do
+    while read -r line; do
         local PAGE="https://bs.to/$line"
         local NAME="$(get_name "$PAGE")"
+
+        if [[ -n "$EPISODES" ]]; then
+            [[ ",${EPISODES}," == *",${NAME%%-*},"* ]] || continue
+        fi
+
         local URL="$(get_url "$PAGE")"
 
         if [[ $EXTRACTONLY -eq 0 ]]; then
@@ -142,7 +157,7 @@ main() {
         elif [[ $EXTRACTONLY -eq 2 ]]; then
             echo "$URL"
         fi
-    done
+    done <<< "$SRC"
 }
 
 main "$@"
