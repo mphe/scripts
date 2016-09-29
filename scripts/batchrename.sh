@@ -63,8 +63,7 @@ main() {
         exit
     fi
 
-    # TODO : Consider using fifos
-    FILELIST=$(mktemp /tmp/batchrename.XXXXXXXX)
+    FILELIST=$(mktemp /dev/shm/batchrename.XXXXXXXX)
     printedithelp > $FILELIST
     join "$@" >> $FILELIST
     local LEN=$?
@@ -97,13 +96,13 @@ main() {
         fi
     done
 
-    echo "$NEWFILELIST" | while [ $# -gt 0 ] && IFS= read -r line; do
+    while [ $# -gt 0 ] && IFS= read -r line; do
         if [ "$1" != "$line" ]; then
             # TODO : Check for overwriting (mv -vi doesn't work because of stdin interference)
             $DRY && echo "$1 -> $line" || mv -v "$1" "$line"
         fi
         shift
-    done
+    done <<< "$NEWFILELIST"
 }
 
 main "$@"
