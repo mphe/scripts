@@ -27,6 +27,12 @@ get_url() {
     echo "$(curl -s "$1" | grep -i "alt='video'" | sed -r "s/.*href='(.+)'.*/\1/" | sed "s/'.*//")"
 }
 
+# Same as get_url() but works for openload links
+# arg1: link to the episode's page
+get_url_openload() {
+    echo "$(curl -s "$1" | grep -i "src='https://openload.co/embed/" | sed -r "s/.*src='(.+)'.*/\1/" | sed "s/'.*//")"
+}
+
 # arg1: link to the episode's page
 get_name() {
     local NAME=${line%/*}
@@ -86,7 +92,8 @@ main() {
     fi
 
     # Download the page and extract each episode's link
-    local SRC="$(curl -s "$1" | grep -i "$2" | grep -i href | sed -r "s/.*href=\"(.+)\".*/\1/")"
+    local HOSTER="$2"
+    local SRC="$(curl -s "$1" | grep -i "$HOSTER" | grep -i href | sed -r "s/.*href=\"(.+)\".*/\1/")"
     shift 2
 
     local PARALLEL=false
@@ -140,7 +147,13 @@ main() {
             [[ ",${EPISODES}," == *",${NAME%%-*},"* ]] || continue
         fi
 
-        local URL="$(get_url "$PAGE")"
+        # Videos hosted on openload are embeded directly in the page and
+        # thus need to be handled differently.
+        if [[ "$HOSTER" == "openload" ]]; then
+            local URL="$(get_url_openload "$PAGE")"
+        else
+            local URL="$(get_url "$PAGE")"
+        fi
 
         if [[ $EXTRACTONLY -eq 0 ]]; then
             if $PARALLEL; then
