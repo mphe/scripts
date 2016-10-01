@@ -14,20 +14,26 @@ printedithelp() {
     echo "You can edit them and the new names are applied automatically after the file is closed. Don't forget to save."
     echo "Empty lines are ignored."
     echo "To ignore a file, simply leave its path and name as it is."
-    echo "These 5 help lines will be ignored!"
+    echo "Don't touch these 5 help lines! They will be removed automatically!"
     echo
 }
 
+# Appends each non-empty argument to a file (in a seperate line) and
+# echos the amount of lines written.
+# arg1:     file
+# arg2...n: arguments
 join() {
     local LEN=0
+    local FNAME="$1"
+    shift
     while [ $# -gt 0 ]; do
         if [ -n "$1" ]; then
-            echo -e "$1"
+            echo -e "$1" >> "$FNAME"
             (( LEN++ ))
         fi
         shift
     done
-    return $LEN
+    echo $LEN
 }
 
 cleanup() {
@@ -65,8 +71,7 @@ main() {
 
     FILELIST=$(mktemp /dev/shm/batchrename.XXXXXXXX)
     printedithelp > $FILELIST
-    join "$@" >> $FILELIST
-    local LEN=$?
+    local LEN=$(join $FILELIST "$@")
 
     while true; do
         vim $FILELIST
@@ -89,7 +94,7 @@ main() {
                 echo >> $FILELIST
                 echo "This is the original filelist." >> $FILELIST
                 echo "THESE 2 LINES AND THE FILELIST MUST BE REMOVED MANUALLY!" >> $FILELIST
-                join "$@" >> $FILELIST
+                join $FILELIST "$@"
             fi
         else
             break
