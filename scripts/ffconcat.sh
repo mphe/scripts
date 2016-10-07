@@ -51,7 +51,7 @@ main() {
 
     # Applying remaining options to the output
     local NEWCONCAT=''
-    for i in {1..$NUMLOOPS}; do
+    for i in $(seq $NUMLOOPS); do
         NEWCONCAT="$NEWCONCAT$CONCAT"
     done
 
