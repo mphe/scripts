@@ -37,7 +37,9 @@ join() {
 }
 
 cleanup() {
-    rm $FILELIST
+    if [[ -n "$FILELIST" ]]; then
+        rm "$FILELIST"
+    fi
 }
 
 main() {
