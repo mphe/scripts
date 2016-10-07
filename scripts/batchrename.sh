@@ -5,8 +5,8 @@ printhelp() {
     echo -e "Usage:\n\t${0##*/} [options] files"
     echo -e "\nOptions:"
     echo -e "\t-h, --help\tShow help"
-    echo -e "\t-d, --dry\tDon't rename anything, just print what would have been done."
-    echo -e "\t--\tTerminate options list"
+    echo -e "\t-d, --dry\tDon't rename anything, just print what would have been done"
+    echo -e "\t--\t\tTerminate options list"
 }
 
 printedithelp() {
