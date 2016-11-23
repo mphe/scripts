@@ -2,7 +2,7 @@
 
 printhelp() {
     local SELF="${0##*/}"
-    local EXURL="https://bs.to/serie/Mirai-Nikki/1"
+    local EXURL="https://bs.to/serie/Shiki/1"
     echo -e "Download all or only certain episodes of a season from burning series using youtube-dl."
     echo -e "Usage:\n\t$SELF [-h | --help] <URL> <hoster> [options]"
     echo -e "Options:"
@@ -13,6 +13,8 @@ printhelp() {
     echo -e "\t-l\t\tSame as -g but print the video hoster links, not direct links. (Faster than -g)"
     echo -e "\t-r\t\tDon't skip the file if an error occurs. Use with caution because killing the process might be the only way to cancel the script."
     echo -e "\t-e <list>\tDownload only the episodes specified in <list>. <list> is a comma separated list (without spaces) of episode numbers."
+    echo -e "\nNotes:"
+    echo -e "\tBS now becomes suspicious when getting too many requests during a short period of time. If downloads suddenly start failing, you might have to wait a bit (and perhaps solve a captcha). Then try again."
     echo -e "\nExamples:"
     echo -e "\t$SELF $EXURL vivo -p"
     echo -e "\n\t$SELF $EXURL vivo -p -m 2 -e 20,21,22,23"
@@ -30,7 +32,7 @@ get_url() {
 # Same as get_url() but works for openload links
 # arg1: link to the episode's page
 get_url_openload() {
-    echo "$(curl -s "$1" | grep -i "src='https://openload.co/embed/" | sed -r "s/.*src='(.+)'.*/\1/" | sed "s/'.*//")"
+    echo "$(curl -s "$1" | grep -i "bs.to/out" | sed -r "s/.*src='(.+)'.*/\1/" | sed "s/'.*//")"
 }
 
 # arg1: link to the episode's page
