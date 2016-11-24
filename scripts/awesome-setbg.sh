@@ -21,12 +21,12 @@ printhelp() {
     echo "Set the background in awesome wm."
     echo -e "Usage:\n\t${0##*/} [options] <filename> [options]"
     echo -e "\nOptions:"
-    echo -e "\t-h, --help\tShow help"
-    echo -e "\t--apply\tMake the background permanent."
-    echo -e "\t--reset\tReset the background to the last applied one."
-    echo -e "\t--fit\tFit the background."
-    echo -e "\t--maximize\tMaximize the background."
-    echo -e "\t--center\tCenter the background."
+    echo -e "\t-h, --help\t\tShow help"
+    echo -e "\t--apply\t\t\tMake the background permanent."
+    echo -e "\t--reset\t\t\tReset the background to the last applied one."
+    echo -e "\t--fit\t\t\tFit the background."
+    echo -e "\t--maximize\t\tMaximize the background."
+    echo -e "\t--center\t\tCenter the background."
     echo -e "\t-s, --screen <n>\tMake changes only to the nth screen."
 }
 
