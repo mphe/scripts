@@ -5,6 +5,7 @@ printhelp() {
     echo -e "Usage:\n\t${0##*/} name [options]"
     echo -e "\nOptions:"
     echo -e "\t-h, --help\t\tShow help"
+    echo -e "\t-d, --dir <name>\tUse this name for the root directory rather than the project name"
     echo -e "\t-i, --include\t\tCreate a 'include' directory"
     echo -e "\t-g, --git\t\tRun 'git init'"
     echo -e "\t-c, --cmake\t\tCreate a basic CMakeLists.txt files"
@@ -36,6 +37,7 @@ main() {
     INCDIR=src
     STD=
     REQUIRE=ON
+    local DIRNAME="$NAME"
     local GITREPO=false
     local CMAKE=false
     local CMAKEGEN=false
@@ -48,6 +50,10 @@ main() {
             -h|--help )
                 printhelp
                 exit
+                ;;
+            -d|--dir )
+                DIRNAME="$2"
+                shift
                 ;;
             -i|--include )
                 DIRS+=( "include/$NAME" )
@@ -73,8 +79,8 @@ main() {
         shift
     done
 
-    mkdir -p -- "$NAME"
-    cd "$NAME"
+    mkdir -p -- "$DIRNAME"
+    cd "$DIRNAME"
     for i in "${DIRS[@]}"; do
         mkdir -p -- "$i"
     done
