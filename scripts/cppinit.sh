@@ -7,7 +7,7 @@ printhelp() {
     echo -e "\t-h, --help\t\tShow help"
     echo -e "\t-d, --dir <name>\tUse this name for the root directory rather than the project name"
     echo -e "\t-i, --include\t\tCreate a 'include' directory"
-    echo -e "\t-g, --git\t\tRun 'git init'"
+    echo -e "\t-g, --git\t\tRun 'git init' and create a .gitignore with the build directory"
     echo -e "\t-c, --cmake\t\tCreate a basic CMakeLists.txt files"
     echo -e "\t-cg, --cmake-gen\tGenerate a Makefile using cmake"
     echo -e "\t-s, --std <version>\tUse this C++ standard"
@@ -85,7 +85,10 @@ main() {
         mkdir -p -- "$i"
     done
 
-    $GITREPO && git init
+    if $GITREPO; then
+        git init
+        gitignore > .gitignore
+    fi
 
     if $CMAKE; then
         cmake_main > CMakeLists.txt
@@ -101,6 +104,10 @@ main() {
             cmake -DCMAKE_BUILD_TYPE=Release ../..
         fi
     fi
+}
+
+gitignore() {
+    echo -e "build/"
 }
 
 # Creates the main CMakeLists.txt
