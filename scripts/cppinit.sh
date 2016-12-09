@@ -127,6 +127,14 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY \${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_CXX_FLAGS_DEBUG \"\${CMAKE_CXX_FLAGS_DEBUG} -fdiagnostics-color=auto\")
 set(CMAKE_CXX_FLAGS_RELEASE \"\${CMAKE_CXX_FLAGS_RELEASE} -fdiagnostics-color=auto\")
 
+# Enable warnings
+if (CMAKE_COMPILER_IS_GNUCC)
+    add_definitions(-Wall -Wno-switch)
+elseif (MSVC)
+    # Untested
+    add_definitions(/W3)
+endif()
+
 # Use ccache if available
 if(USE_CCACHE)
     find_program(CCACHE_FOUND ccache)
