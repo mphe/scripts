@@ -13,10 +13,12 @@ printhelp() {
     echo -e "\t-l\t\tSame as -g but print the video hoster links, not direct links. (Faster than -g)"
     echo -e "\t-r\t\tDon't skip the file if an error occurs. Use with caution because killing the process might be the only way to cancel the script."
     echo -e "\t-e <list>\tDownload only the episodes specified in <list>. <list> is a comma separated list (without spaces) of episode numbers."
+    echo -e "\t-v\t\tInvert episode selection (download everything except episodes specified with -e)."
     echo -e "\nNotes:"
     echo -e "\tBS now becomes suspicious when getting too many requests during a short period of time. If downloads suddenly start failing, you might have to wait a bit (and perhaps solve a captcha). Then try again."
     echo -e "\nExamples:"
     echo -e "\t$SELF $EXURL vivo -p"
+    echo -e "\n\t$SELF $EXURL vivo -p -m 2 -e 1 -v"
     echo -e "\n\t$SELF $EXURL vivo -p -m 2 -e 20,21,22,23"
     echo -e "\n\tmpv \$($SELF $EXURL vivo -l)"
     echo -e "\t\tNOTE: this might take a while until all links are extracted."
@@ -98,6 +100,7 @@ main() {
     local SRC="$(curl -s "$1" | grep -i "$HOSTER" | grep -i href | sed -r "s/.*href=\"(.+)\".*/\1/")"
     shift 2
 
+    local INVERT=false
     local PARALLEL=false
     local EXTRACTONLY=0
     local MAXDOWNLOADS=4
@@ -128,6 +131,9 @@ main() {
                 EPISODES="$2"
                 shift
                 ;;
+            -v )
+                INVERT=true
+                ;;
             * )
                 echo "Unknown option: $1"
                 ;;
@@ -146,7 +152,12 @@ main() {
         local NAME="$(get_name "$PAGE")"
 
         if [[ -n "$EPISODES" ]]; then
-            [[ ",${EPISODES}," == *",${NAME%%-*},"* ]] || continue
+            # Is the current episode in the episode list?
+            if [[ ",${EPISODES}," == *",${NAME%%-*},"* ]]; then
+                $INVERT && continue
+            else
+                $INVERT || continue
+            fi
         fi
 
         # Videos hosted on openload are embeded directly in the page and
