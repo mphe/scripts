@@ -123,13 +123,9 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY \${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY \${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY \${CMAKE_BINARY_DIR}/lib)
 
-# Colored compiler output
-set(CMAKE_CXX_FLAGS_DEBUG \"\${CMAKE_CXX_FLAGS_DEBUG} -fdiagnostics-color=auto\")
-set(CMAKE_CXX_FLAGS_RELEASE \"\${CMAKE_CXX_FLAGS_RELEASE} -fdiagnostics-color=auto\")
-
-# Enable warnings
+# Enable warnings and colored compiler output
 if (CMAKE_COMPILER_IS_GNUCC)
-    add_definitions(-Wall -Wno-switch)
+    add_definitions(-Wall -Wno-switch -fdiagnostics-color=auto)
 elseif (MSVC)
     # Untested
     add_definitions(/W3)
