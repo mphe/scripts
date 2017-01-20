@@ -14,6 +14,8 @@ printhelp() {
     echo -e "\t-r\t\tDon't skip the file if an error occurs. Use with caution because killing the process might be the only way to cancel the script."
     echo -e "\t-e <list>\tDownload only the episodes specified in <list>. <list> is a comma separated list (without spaces) of episode numbers."
     echo -e "\t-v\t\tInvert episode selection (download everything except episodes specified with -e)."
+    echo -e "\t-w\t\tUse the wayback machine for link extraction. Requires the input link to be a wayback machine link to the season."
+    echo -e "\t-wh\t\tUse wayback machine hoster links. Can only be used in combination with -w."
     echo -e "\nNotes:"
     echo -e "\tBS now becomes suspicious when getting too many requests during a short period of time. If downloads suddenly start failing, you might have to wait a bit (and perhaps solve a captcha). Then try again."
     echo -e "\nExamples:"
@@ -29,6 +31,11 @@ printhelp() {
 # arg1: link to the episode's page
 get_url() {
     echo "$(curl -s "$1" | grep -i "alt='video'" | sed -r "s/.*href='(.+)'.*/\1/" | sed "s/'.*//")"
+}
+
+# arg1: link to the episode's page
+get_wayback_page() {
+    echo "$(curl -s "http://archive.org/wayback/available?url=$1" | sed -r "s/.*\"url\":\"(.*)\".*/\1/" | sed "s/\".*//")"
 }
 
 # Same as get_url() but works for openload links
@@ -97,6 +104,8 @@ main() {
 
     # Download the page and extract each episode's link
     local HOSTER="$2"
+    # local SRC="$(curl -s "$1")"
+    # echo "$SRC"
     local SRC="$(curl -s "$1" | grep -i "$HOSTER" | grep -i href | sed -r "s/.*href=\"(.+)\".*/\1/")"
     shift 2
 
@@ -106,6 +115,8 @@ main() {
     local MAXDOWNLOADS=4
     local SKIP=true
     local EPISODES=
+    local WAYBACK=false
+    local WAYBACK_HOSTER=false
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -134,6 +145,12 @@ main() {
             -v )
                 INVERT=true
                 ;;
+            -w )
+                WAYBACK=true
+                ;;
+            -wh )
+                WAYBACK_HOSTER=true
+                ;;
             * )
                 echo "Unknown option: $1"
                 ;;
@@ -149,6 +166,10 @@ main() {
 
     while read -r line; do
         local PAGE="https://bs.to/$line"
+        if $WAYBACK; then
+            PAGE="$(get_wayback_page "$PAGE")"
+        fi
+
         local NAME="$(get_name "$PAGE")"
 
         if [[ -n "$EPISODES" ]]; then
@@ -166,6 +187,14 @@ main() {
             local URL="$(get_url_openload "$PAGE")"
         else
             local URL="$(get_url "$PAGE")"
+        fi
+
+        if $WAYBACK; then
+            if $WAYBACK_HOSTER; then
+                URL="http://web.archive.org$URL"
+            else
+                URL="${URL#/web/*/}"
+            fi
         fi
 
         if [[ $EXTRACTONLY -eq 0 ]]; then
