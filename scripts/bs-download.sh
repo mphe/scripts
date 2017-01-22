@@ -2,7 +2,7 @@
 
 printhelp() {
     local SELF="${0##*/}"
-    local EXURL="https://bs.to/serie/Shiki/1"
+    local EXURL="https://bs.to/serie/Gabriel-Dropout/1"
     echo -e "Download all or only certain episodes of a season from burning series using youtube-dl."
     echo -e "Usage:\n\t$SELF [-h | --help] <URL> <hoster> [options]"
     echo -e "Options:"
@@ -16,6 +16,7 @@ printhelp() {
     echo -e "\t-v\t\tInvert episode selection (download everything except episodes specified with -e)."
     echo -e "\t-w\t\tUse the wayback machine for link extraction. Requires the input link to be a wayback machine link to the season."
     echo -e "\t-wh\t\tUse wayback machine hoster links. Can only be used in combination with -w."
+    echo -e "\t-a\t\tPrompt for captcha when downloading a file rather than for all files at once in the beginning."
     echo -e "\nNotes:"
     echo -e "\tBS now becomes suspicious when getting too many requests during a short period of time. If downloads suddenly start failing, you might have to wait a bit (and perhaps solve a captcha). Then try again."
     echo -e "\nExamples:"
@@ -63,9 +64,7 @@ download_p() {
 # arg2: name
 # arg3: skip on error (true/false)
 download() {
-    local BLUE="$(tput setaf 4)"
-    local RESET="$(tput sgr0)"
-    echo -e "\n${BLUE}[Downloading]$RESET $2 ( $1 )"
+    log "Downloading" "$2 ( $1 )"
     until youtube-dl -o "$2.%(ext)s" -R 50 "$1" || $3; do
         :
     done
@@ -85,6 +84,37 @@ cleanup() {
         sleep 1
     done
     rm "$NUMDOWNLOADS"
+}
+
+# arg1: prefix
+# arg2: text
+log() {
+    local BLUE="$(tput setaf 4)"
+    local RESET="$(tput sgr0)"
+    echo -e "\n${BLUE}[$1]$RESET $2"
+}
+
+check_cef_available() {
+    if ! which cefget.py > /dev/null; then
+        return 1
+    elif ! pip3 freeze | grep cefpython > /dev/null; then
+        return 1
+    fi
+    return 0
+}
+
+# arg1: url
+# arg2: hoster
+prompt_captcha() {
+    if [[ "$1" =~ bs.to/out/.* ]]; then
+        local NEWURL
+        NEWURL="$(cefget.py "$1" "$2")"
+        if [[ $? -eq 0 ]]; then
+            echo "$NEWURL"
+            return
+        fi
+    fi
+    echo "$1"
 }
 
 main() {
@@ -117,6 +147,7 @@ main() {
     local EPISODES=
     local WAYBACK=false
     local WAYBACK_HOSTER=false
+    local PROMPT_LAZY=false
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -151,6 +182,9 @@ main() {
             -wh )
                 WAYBACK_HOSTER=true
                 ;;
+            -a )
+                PROMPT_LAZY=true
+                ;;
             * )
                 echo "Unknown option: $1"
                 ;;
@@ -162,6 +196,15 @@ main() {
         # Shared memory to store the current amount of parallel downloads
         NUMDOWNLOADS=$(mktemp /dev/shm/bs-downloads-XXXXXXXXX)
         trap cleanup EXIT
+    fi
+
+    # Extract URLs
+    URLS=()
+    NAMES=()
+    local CEFAVAIL=true
+    if ! check_cef_available; then
+        CEFAVAIL=false
+        echo "CEF (Chromium Embedded Framework) captcha popup not available."
     fi
 
     while read -r line; do
@@ -181,6 +224,10 @@ main() {
             fi
         fi
 
+        if [[ $EXTRACTONLY -eq 0 ]]; then
+            log "Extracting" "$NAME"
+        fi
+
         # Videos hosted on openload are embeded directly in the page and
         # thus need to be handled differently.
         if [[ "$HOSTER" == "openload" ]]; then
@@ -197,22 +244,45 @@ main() {
             fi
         fi
 
-        if [[ $EXTRACTONLY -eq 0 ]]; then
+        # Prompt the user to solve the captcha
+        # Untested with wayback machine
+        if ! $PROMPT_LAZY && $CEFAVAIL; then
+            URL="$(prompt_captcha "$URL" "$HOSTER")"
+        fi
+
+        # Print or store URL for downloading
+        if [[ $EXTRACTONLY -eq 1 ]]; then
+            youtube-dl -g "$URL"
+        elif [[ $EXTRACTONLY -eq 2 ]]; then
+            echo "$URL"
+        else
+            URLS+=("$URL")
+            NAMES+=("$NAME")
+        fi
+    done <<< "$SRC"
+
+    # Download
+    if [[ $EXTRACTONLY -eq 0 ]]; then
+        for i in "${!URLS[@]}"; do
             if $PARALLEL; then
                 until [[ $(num_downloads) -lt $MAXDOWNLOADS ]]; do
                     sleep 1
                 done
-                inc_downloads +1
-                download_p "$URL" "$NAME" $SKIP &
-            else
-                download "$URL" "$NAME" $SKIP
             fi
-        elif [[ $EXTRACTONLY -eq 1 ]]; then
-            youtube-dl -g "$URL"
-        elif [[ $EXTRACTONLY -eq 2 ]]; then
-            echo "$URL"
-        fi
-    done <<< "$SRC"
+
+            local url="${URLS[$i]}"
+            if $PROMPT_LAZY && $CEFAVAIL; then
+                url="$(prompt_captcha "$url" "$HOSTER")"
+            fi
+
+            if $PARALLEL; then
+                inc_downloads +1
+                download_p "$url" "${NAMES[$i]}" $SKIP &
+            else
+                download "$url" "${NAMES[$i]}" $SKIP
+            fi
+        done
+    fi
 }
 
 main "$@"
