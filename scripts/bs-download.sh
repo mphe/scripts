@@ -31,7 +31,7 @@ printhelp() {
 
 # arg1: link to the episode's page
 get_url() {
-    echo "$(curl -s "$1" | grep -i "alt='video'" | sed -r "s/.*href='(.+)'.*/\1/" | sed "s/'.*//")"
+    echo "$(curl -s "$1" | grep -i "class=\"hoster-player\"" | sed -r "s/.*href=\"(.+)\".*/\1/" | sed "s/\".*//")"
 }
 
 # arg1: link to the episode's page
@@ -40,9 +40,11 @@ get_wayback_page() {
 }
 
 # Same as get_url() but works for openload links
+# Not needed anymore, but keep it in case it changes back in future.
 # arg1: link to the episode's page
 get_url_openload() {
-    echo "$(curl -s "$1" | grep -i "bs.to/out" | sed -r "s/.*src='(.+)'.*/\1/" | sed "s/'.*//")"
+    get_url "$1"
+    # echo "$(curl -s "$1" | grep -i "bs.to/out" | sed -r "s/.*src='(.+)'.*/\1/" | sed "s/'.*//")"
 }
 
 # arg1: link to the episode's page
@@ -106,15 +108,37 @@ check_cef_available() {
 # arg1: url
 # arg2: hoster
 prompt_captcha() {
+    local HOSTER="$2"
+
+    # OpenloadHD links resolve back to openload
+    if [[ "${2,,}" == "openloadhd" ]]; then
+        HOSTER=openload
+    fi
+
     if [[ "$1" =~ bs.to/out/.* ]]; then
         local NEWURL
-        NEWURL="$(cefget.py "$1" "$2")"
+        NEWURL="$(cefget.py "$1" "$HOSTER")"
         if [[ $? -eq 0 ]]; then
             echo "$NEWURL"
             return
         fi
     fi
     echo "$1"
+}
+
+# Download the page and extract each episode's link
+# arg1: season link
+# arg2: hoster
+extract_episodes() {
+    local SRC="$(curl -s "$1" | grep -i "$2" | grep -i href | sed -r "s/.*href=\"(.+)\".*/\1/")"
+
+    # There's another hoster OpenloadHD that needs to be filtered out if the
+    # desired hoster is the normal Openload
+    if [[ "${2,,}" == "openload" ]]; then
+        echo "$SRC" | grep -vi openloadhd
+    else
+        echo "$SRC"
+    fi
 }
 
 main() {
@@ -132,11 +156,8 @@ main() {
         [[ $REPLY =~ ^[Yy]$ ]] && exit
     fi
 
-    # Download the page and extract each episode's link
     local HOSTER="$2"
-    # local SRC="$(curl -s "$1")"
-    # echo "$SRC"
-    local SRC="$(curl -s "$1" | grep -i "$HOSTER" | grep -i href | sed -r "s/.*href=\"(.+)\".*/\1/")"
+    local SRC="$(extract_episodes "$1" "$HOSTER")"
     shift 2
 
     local INVERT=false
@@ -230,7 +251,7 @@ main() {
 
         # Videos hosted on openload are embeded directly in the page and
         # thus need to be handled differently.
-        if [[ "$HOSTER" == "openload" ]]; then
+        if [[ "${HOSTER,,}" == "openload" ]]; then
             local URL="$(get_url_openload "$PAGE")"
         else
             local URL="$(get_url "$PAGE")"
