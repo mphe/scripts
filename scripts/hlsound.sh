@@ -15,6 +15,7 @@ printhelp() {
     echo -e "\t-h, --help\tShow help"
     echo -e "\t--debug\tDon't do anything, just print what would have been done."
     echo -e "\t--noytdl\tDon't use youtube-dl to extract the video/audio URL in the given URL."
+    echo -e "\t--old\tUse 11025 Hz rather than the new 22050 Hz. Needed for some games, e.g. Gmod."
     echo -e "\t-o name\tOutput name for the given file/url."
     echo -e "\t-ss time\tStart position in seconds or in the format 'H:M:S.MS'."
     echo -e "\t-t duration\tDuration in seconds or in the format 'H:M:S.MS'."
@@ -40,6 +41,7 @@ main() {
     local OUT=
     local OUTDIR=.
     local DEBUG=false
+    local HZ=22050
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -73,6 +75,9 @@ main() {
                 ;;
             --noytdl )
                 NOYTDL=true
+                ;;
+            --old )
+                HZ=11025
                 ;;
             * )
                 local FILE="$1"
@@ -113,12 +118,12 @@ main() {
 convertfile() {
     local OUTFILE="$(mktemp "/tmp/$(basename "$2").XXXXXXXXX.wav")"
     if $DEBUG; then
-        echo "ffmpeg -y $3 -i \"$1\" $4 -copyts -map_metadata -1 -ac 1 -ar 11025 \"$OUTFILE\""
+        echo "ffmpeg -y $3 -i \"$1\" $4 -copyts -map_metadata -1 -ac 1 -ar $HZ \"$OUTFILE\""
         echo "shntool strip \"$OUTFILE\""
         echo "mv \"${OUTFILE%.wav}-stripped.wav\" \"$2\""
         echo "rm \"$OUTFILE\""
     else
-        ffmpeg -y $3 -i "$1" $4 -copyts -map_metadata -1 -ac 1 -ar 11025 "$OUTFILE"
+        ffmpeg -y $3 -i "$1" $4 -copyts -map_metadata -1 -ac 1 -ar $HZ "$OUTFILE"
         shntool strip "$OUTFILE"
         mv "${OUTFILE%.wav}-stripped.wav" "$2"
     fi
