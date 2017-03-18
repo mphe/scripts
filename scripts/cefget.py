@@ -12,6 +12,7 @@
 
 from cefpython3 import cefpython as cef
 import sys
+import os
 
 urlfound = False
 
@@ -35,7 +36,7 @@ def main():
 
     sys.excepthook = cef.ExceptHook
     cef.Initialize({
-        # "cache_path": "testcache",
+        "cache_path": os.getenv("HOME") + "/.cache/cefget",
         "multi_threaded_message_loop": False
     })
 
