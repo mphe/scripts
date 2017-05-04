@@ -5,6 +5,7 @@ printhelp() {
     echo -e "Usage:\n\t${0##*/} [options] files"
     echo -e "\nOptions:"
     echo -e "\t-h, --help\tShow help"
+    echo -e "\t-c, --copy\tCopy files rather than renaming (cp rather than mv)."
     echo -e "\t-d, --dry\tDon't rename anything, just print what would have been done"
     echo -e "\t--\t\tTerminate options list"
 }
@@ -45,12 +46,17 @@ cleanup() {
 main() {
     trap cleanup EXIT
 
+    local COMMAND=mv
     local DRY=false
+
     while [ $# -gt 0 ]; do
         case "$1" in
             -h|--help )
                 printhelp
                 exit
+                ;;
+            -c|--copy )
+                COMMAND=cp
                 ;;
             -d|--dry )
                 DRY=true
@@ -106,7 +112,7 @@ main() {
     while [ $# -gt 0 ] && IFS= read -r line; do
         if [ "$1" != "$line" ]; then
             # TODO : Check for overwriting (mv -vi doesn't work because of stdin interference)
-            $DRY && echo "$1 -> $line" || mv -v "$1" "$line"
+            $DRY && echo "$1 -> $line" || $COMMAND -v "$1" "$line"
         fi
         shift
     done <<< "$NEWFILELIST"
