@@ -17,6 +17,7 @@ printhelp() {
     echo -e "\t-w\t\tUse the wayback machine for link extraction. Requires the input link to be a wayback machine link to the season."
     echo -e "\t-wh\t\tUse wayback machine hoster links. Can only be used in combination with -w."
     echo -e "\t-a\t\tPrompt for captcha when downloading a file rather than for all files at once in the beginning."
+    echo -e "\t-s <seconds>\tSleep for a given amount of seconds before extracting another URL. Might reduce captcha complexity."
     echo -e "\nNotes:"
     echo -e "\tBS now becomes suspicious when getting too many requests during a short period of time. If downloads suddenly start failing, you might have to wait a bit (and perhaps solve a captcha). Then try again."
     echo -e "\nExamples:"
@@ -169,6 +170,7 @@ main() {
     local WAYBACK=false
     local WAYBACK_HOSTER=false
     local PROMPT_LAZY=false
+    local SLEEP=0
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -205,6 +207,10 @@ main() {
                 ;;
             -a )
                 PROMPT_LAZY=true
+                ;;
+            -s )
+                SLEEP=$2
+                shift
                 ;;
             * )
                 echo "Unknown option: $1"
@@ -268,6 +274,10 @@ main() {
         # Prompt the user to solve the captcha
         # Untested with wayback machine
         if ! $PROMPT_LAZY && $CEFAVAIL; then
+            if [[ $SLEEP -gt 0 ]]; then
+                echo "Waiting $SLEEP seconds"
+                sleep $SLEEP
+            fi
             URL="$(prompt_captcha "$URL" "$HOSTER")"
         fi
 
