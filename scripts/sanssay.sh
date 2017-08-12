@@ -127,7 +127,8 @@ loop() {
                 elif $ANSI && [[ "$char" =~ [a-zA-Z] ]]; then
                     ANSI=false
                 elif ! $ANSI; then
-                    $SOUND && mplayer -noconsolecontrols "$SNDFILE" > /dev/null 2>&1 &
+                    # $SOUND && mplayer -noconsolecontrols "$SNDFILE" > /dev/null 2>&1 &
+                    $SOUND && mpv "$SNDFILE" > /dev/null 2>&1 &
                     sleep $SLEEP
                 fi
             fi
