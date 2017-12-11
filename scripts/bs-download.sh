@@ -1,10 +1,15 @@
 #!/bin/bash
 
+# Stores the path to cefget.py
+# Set by check_cef_available
+CEFGET_PATH=
+
+
 printhelp() {
     local SELF="${0##*/}"
     local EXURL="https://bs.to/serie/Shinsekai-Yori/1"
     echo -e "Download all or only certain episodes of a season from burning series using youtube-dl."
-    echo -e "Requires cefget.py to be in \$PATH to show captcha dialogues."
+    echo -e "Requires cefget.py to be in \$PATH or in same directory as bs-download.sh to show captcha dialogues."
     echo -e "Usage:\n\t$SELF [-h | --help] <URL> <hoster> [options]"
     echo -e "Options:"
     echo -e "\t-h, --help\tShow help."
@@ -98,12 +103,26 @@ log() {
     echo -e "\n${BLUE}[$1]$RESET $2"
 }
 
+# arg1: text
+warn() {
+    local YELLOW="$(tput setaf 3)"
+    local RESET="$(tput sgr0)"
+    echo -e "\n${YELLOW}[WARNING]$RESET $1"
+}
+
 check_cef_available() {
-    if ! which cefget.py > /dev/null; then
-        return 1
-    elif ! pip3 freeze | grep cefpython > /dev/null; then
+    if ! which cefget.py > /dev/null 2>&1; then
+        local FILEDIR="$(dirname $(readlink -f "$0"))/cefget.py"
+        [[ -f "$FILEDIR" ]] || return 1
+        CEFGET_PATH="$FILEDIR"
+    else
+        CEFGET_PATH="$(which cefget.py)"
+    fi
+
+    if ! pip3 freeze | grep cefpython > /dev/null; then
         return 1
     fi
+
     return 0
 }
 
@@ -119,7 +138,7 @@ prompt_captcha() {
 
     if [[ "$1" =~ bs.to/out/.* ]]; then
         local NEWURL
-        NEWURL="$(cefget.py "$1" "$HOSTER")"
+        NEWURL="$("$CEFGET_PATH" "$1" "$HOSTER")"
         if [[ $? -eq 0 ]]; then
             echo "$NEWURL"
             return
@@ -150,7 +169,7 @@ main() {
     fi
 
     if [[ ${1:0:1} == '-' ]] || [[ ${2:0:1} == '-' ]]; then
-        echo "Warning: first or second parameter starts with '-'. Did you forget the hoster?"
+        warn "first or second parameter starts with '-'. Did you forget the hoster?"
         until [[ $REPLY =~ ^[YyNn]$ ]]; do
             read -p "Abort?  [y/N] " -n 1 -r
             echo
@@ -198,14 +217,14 @@ main() {
                 if [[ -z "$EPISODES" ]]; then
                     STARTAT="$2"
                 else
-                    echo "Warning: \"-ss $2\" has no effect because -e is present."
+                    warn "\"-ss $2\" has no effect because -e is present."
                 fi
                 shift
                 ;;
             -e )
                 EPISODES="$2"
                 if [[ -n "$STARTAT" ]]; then
-                    echo "Warning: \"-ss $STARTAT\" has no effect because -e is present."
+                    warn "\"-ss $STARTAT\" has no effect because -e is present."
                     STARTAT=
                 fi
                 shift
@@ -240,12 +259,12 @@ main() {
     fi
 
     # Extract URLs
-    URLS=()
-    NAMES=()
+    local URLS=()
+    local NAMES=()
     local CEFAVAIL=true
     if ! check_cef_available; then
         CEFAVAIL=false
-        echo "CEF (Chromium Embedded Framework) captcha popup not available."
+        warn "CEF (Chromium Embedded Framework) captcha popup not available."
     fi
 
     while read -r line; do
