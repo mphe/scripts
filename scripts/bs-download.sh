@@ -2,8 +2,9 @@
 
 printhelp() {
     local SELF="${0##*/}"
-    local EXURL="https://bs.to/serie/Gabriel-Dropout/1"
+    local EXURL="https://bs.to/serie/Shinsekai-Yori/1"
     echo -e "Download all or only certain episodes of a season from burning series using youtube-dl."
+    echo -e "Requires cefget.py to be in \$PATH to show captcha dialogues."
     echo -e "Usage:\n\t$SELF [-h | --help] <URL> <hoster> [options]"
     echo -e "Options:"
     echo -e "\t-h, --help\tShow help."
@@ -12,18 +13,18 @@ printhelp() {
     echo -e "\t-g\t\tDon't download anything, just print the download links to stdout."
     echo -e "\t-l\t\tSame as -g but print the video hoster links, not direct links. (Faster than -g)"
     echo -e "\t-r\t\tDon't skip the file if an error occurs. Use with caution because killing the process might be the only way to cancel the script."
-    echo -e "\t-e <list>\tDownload only the episodes specified in <list>. <list> is a comma separated list (without spaces) of episode numbers."
-    echo -e "\t-v\t\tInvert episode selection (download everything except episodes specified with -e)."
+    echo -e "\t-ss <start>\tDownload all episodes starting from <start> (including <start> itself). Has no effect if -e is supplied."
+    echo -e "\t-e <list>\tDownload only the episodes specified in <list>. <list> is a comma separated list (without spaces) of episode numbers. Has precedence over -ss."
+    echo -e "\t-v\t\tInvert episode selection (download everything except episodes specified with -e or -ss)."
     echo -e "\t-w\t\tUse the wayback machine for link extraction. Requires the input link to be a wayback machine link to the season."
     echo -e "\t-wh\t\tUse wayback machine hoster links. Can only be used in combination with -w."
     echo -e "\t-a\t\tPrompt for captcha when downloading a file rather than for all files at once in the beginning."
     echo -e "\t-s <seconds>\tSleep for a given amount of seconds before extracting another URL. Might reduce captcha complexity."
-    echo -e "\nNotes:"
-    echo -e "\tBS now becomes suspicious when getting too many requests during a short period of time. If downloads suddenly start failing, you might have to wait a bit (and perhaps solve a captcha). Then try again."
     echo -e "\nExamples:"
     echo -e "\t$SELF $EXURL vivo -p"
     echo -e "\n\t$SELF $EXURL vivo -p -m 2 -e 1 -v"
     echo -e "\n\t$SELF $EXURL vivo -p -m 2 -e 20,21,22,23"
+    echo -e "\n\t$SELF $EXURL vivo -ss 12"
     echo -e "\n\tmpv \$($SELF $EXURL vivo -l)"
     echo -e "\t\tNOTE: this might take a while until all links are extracted."
     echo -e "\n\tmplayer \$($SELF $EXURL vivo -g)"
@@ -167,6 +168,7 @@ main() {
     local MAXDOWNLOADS=4
     local SKIP=true
     local EPISODES=
+    local STARTAT=
     local WAYBACK=false
     local WAYBACK_HOSTER=false
     local PROMPT_LAZY=false
@@ -192,8 +194,20 @@ main() {
                 MAXDOWNLOADS=$2
                 shift
                 ;;
+            -ss )
+                if [[ -z "$EPISODES" ]]; then
+                    STARTAT="$2"
+                else
+                    echo "Warning: \"-ss $2\" has no effect because -e is present."
+                fi
+                shift
+                ;;
             -e )
                 EPISODES="$2"
+                if [[ -n "$STARTAT" ]]; then
+                    echo "Warning: \"-ss $STARTAT\" has no effect because -e is present."
+                    STARTAT=
+                fi
                 shift
                 ;;
             -v )
@@ -242,9 +256,16 @@ main() {
 
         local NAME="$(get_name "$PAGE")"
 
+        # Should the current episode be downloaded?
         if [[ -n "$EPISODES" ]]; then
-            # Is the current episode in the episode list?
+            # Continue to next episode if not in (inverted) list
             if [[ ",${EPISODES}," == *",${NAME%%-*},"* ]]; then
+                $INVERT && continue
+            else
+                $INVERT || continue
+            fi
+        elif [[ -n "$STARTAT" ]]; then
+            if [[ ${NAME%%-*} -ge $STARTAT ]]; then
                 $INVERT && continue
             else
                 $INVERT || continue
