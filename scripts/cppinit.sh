@@ -10,8 +10,9 @@ printhelp() {
     echo -e "\t-g, --git\t\tRun 'git init' and create a .gitignore with the build directory"
     echo -e "\t-c, --cmake\t\tCreate a basic CMakeLists.txt files"
     echo -e "\t-cg, --cmake-gen\tGenerate a Makefile using cmake"
-    echo -e "\t-s, --std <version>\tUse this C++ standard"
+    echo -e "\t-s, --std <version>\tUse this C++ standard, e.g. -s 11 to use c++11."
     echo -e "\t-n, --norequire\t\tDon't require the standard set with -s/--std"
+    echo -e "\t--sfml <version>\tSet up an SFML cmake project, e.g. --sfml 2.4"
 }
 
 main() {
@@ -34,9 +35,11 @@ main() {
     fi
 
     NAME="$1"
+    UPPERNAME="${NAME^^}"
     INCDIR=src
     STD=
     REQUIRE=ON
+    SFML=
     local DIRNAME="$NAME"
     local GITREPO=false
     local CMAKE=false
@@ -75,6 +78,13 @@ main() {
             -n|--norequire )
                 REQUIRE=OFF
                 ;;
+            --sfml )
+                SFML="$2"
+                shift
+                ;;
+            * )
+                echo "Unknown parameter: $1"
+                ;;
         esac
         shift
     done
@@ -85,17 +95,19 @@ main() {
         mkdir -p -- "$i"
     done
 
+    maincpp > "src/$NAME/main.cpp"
+
     if $GITREPO; then
         git init
         gitignore > .gitignore
     fi
 
     if $CMAKE; then
+        mkdir -p cmake/Modules
         cmake_main > CMakeLists.txt
         cmake_src > "src/$NAME/CMakeLists.txt"
         cmake_test > test/CMakeLists.txt
         echo "" > extlib/CMakeLists.txt
-        maincpp > "src/$NAME/main.cpp"
 
         if $CMAKEGEN; then
             cd build/debug
@@ -116,12 +128,17 @@ cmake_main() {
 project(\"$NAME\")
 
 # Options {{{
-option(BUILD_TESTS \"Build tests\" ON)
-option(USE_CCACHE \"Use ccache if available\" ON)
-
+set(CMAKE_MODULE_PATH \${CMAKE_MODULEPATH} \"\${CMAKE_SOURCE_DIR}/cmake/Modules/\")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY \${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY \${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY \${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY \${CMAKE_BINARY_DIR}/lib)"
+
+[[ -n "$SFML" ]] && echo -e "
+set(SFML_ROOT \"\" CACHE PATH \"SFML library directory (optional)\")"
+
+echo -e "
+option(${UPPERNAME}_BUILD_TESTS \"Build tests\" ON)
+option(USE_CCACHE \"Use ccache if available\" ON)
 
 # Enable warnings and colored compiler output
 if (CMAKE_COMPILER_IS_GNUCC)
@@ -140,9 +157,14 @@ if(USE_CCACHE)
     endif(CCACHE_FOUND)
 endif(USE_CCACHE)
 
-# }}} Options
+# }}} Options"
 
+[[ -n "$SFML" ]] && echo -e "
+# sfml
+find_package(SFML $SFML COMPONENTS system window graphics REQUIRED)
+include_directories(\${SFML_INCLUDE_DIR})"
 
+echo -e "
 add_subdirectory(\"extlib\")
 add_subdirectory(\"src/$NAME\")
 
@@ -161,6 +183,7 @@ set(PROJECT_SOURCES
 )
 
 set(EXT_LIBRARIES
+    $([[ -n "$SFML" ]] && echo -ne "\${SFML_LIBRARIES}")
 )
 
 source_group(\${PROJECT_NAME} FILES \${PROJECT_SOURCES})
@@ -171,7 +194,7 @@ include_directories(
 
 add_executable(\${PROJECT_NAME} \${PROJECT_SOURCES})
 target_link_libraries(\${PROJECT_NAME} \${EXT_LIBRARIES})
-$([[ -n $STD ]] && echo -n "set_property(TARGET \${PROJECT_NAME} PROPERTY CXX_STANDARD $STD)")
+$([[ -n $STD ]] && echo -ne "set_property(TARGET \${PROJECT_NAME} PROPERTY CXX_STANDARD $STD)")
 
 add_custom_target(run
     COMMAND \${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/\${PROJECT_NAME}
