@@ -230,7 +230,7 @@ readoptions() {
                 shift
                 ;;
             --pun )
-                TEXT=$(curl -s http://www.punoftheday.com/cgi-bin/randompun.pl | grep -o -P '(?<=<p>).*(?=</p>)')
+                TEXT=$(curl -s https://www.punoftheday.com/cgi-bin/randompun.pl | grep -o -P '(?<=<p>).*(?=</p>)')
                 [[ -z "$CHARACTER" ]] && CHARACTER=sans_wink
                 ;;
             * )
