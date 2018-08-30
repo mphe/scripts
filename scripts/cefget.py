@@ -16,13 +16,12 @@ import os
 
 urlfound = False
 
-def OnLoadStart(browser, frame):
+def OnLoadingStateChange(browser, is_loading, **_):
     global urlfound
-    if frame == browser.GetMainFrame():
-        if sys.argv[2]in browser.GetUrl():
-            print(browser.GetUrl())
-            urlfound = True
-            browser.CloseBrowser()
+    if not urlfound and sys.argv[2] in browser.GetUrl():
+        print(browser.GetUrl())
+        urlfound = True
+        browser.CloseBrowser()
 
 def DoClose(browser):
     cef.QuitMessageLoop()
@@ -40,8 +39,8 @@ def main():
         "multi_threaded_message_loop": False
     })
 
-    browser = cef.CreateBrowserSync(url=sys.argv[1])
-    browser.SetClientCallback("OnLoadStart", OnLoadStart)
+    browser = cef.CreateBrowserSync(url=sys.argv[1], window_title=sys.argv[1])
+    browser.SetClientCallback("OnLoadingStateChange", OnLoadingStateChange)
     browser.SetClientCallback("DoClose", DoClose)
     cef.MessageLoop()
     browser = None

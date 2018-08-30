@@ -151,7 +151,7 @@ prompt_captcha() {
 # arg1: season link
 # arg2: hoster
 extract_episodes() {
-    local SRC="$(curl -s "$1" | grep -i "$2" | grep -i href | sed -r "s/.*href=\"(.+)\".*/\1/")"
+    local SRC="$(curl -s "$1" | grep -i "$2" | grep -i href | sed -r "s/.*href=\"(.+)\".*/\1/" | sed -r "s/\".*//")"
 
     # There's another hoster OpenloadHD that needs to be filtered out if the
     # desired hoster is the normal Openload
@@ -269,6 +269,7 @@ main() {
 
     while read -r line; do
         local PAGE="https://bs.to/$line"
+
         if $WAYBACK; then
             PAGE="$(get_wayback_page "$PAGE")"
         fi
