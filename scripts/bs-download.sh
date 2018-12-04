@@ -25,6 +25,8 @@ printhelp() {
     echo -e "\t-wh\t\tUse wayback machine hoster links. Can only be used in combination with -w."
     echo -e "\t-a\t\tPrompt for captcha when downloading a file rather than for all files at once in the beginning."
     echo -e "\t-s <seconds>\tSleep for a given amount of seconds before extracting another URL. Might reduce captcha complexity."
+    echo -e "\t-c <language>\tSpecifies the language. Defaults to 'de'."
+    echo -e "\t-d\t\tOutput debug information"
     echo -e "\nExamples:"
     echo -e "\t$SELF $EXURL vivo -p"
     echo -e "\n\t$SELF $EXURL vivo -p -m 2 -e 1 -v"
@@ -54,10 +56,30 @@ get_url_openload() {
     # echo "$(curl -s "$1" | grep -i "bs.to/out" | sed -r "s/.*src='(.+)'.*/\1/" | sed "s/'.*//")"
 }
 
+# Adds leading zeros to filename
 # arg1: link to the episode's page
 get_name() {
-    local NAME=${line%/*}
+    local NAME="$(get_raw_name "$1")"
+    echo "$(printf "%02d" $(get_num "$1"))-${NAME#*-}"
+}
+
+# arg1: link to the episode's page
+get_raw_name() {
+    local NAME=${line%/*/*}
     echo "${NAME##*/}"
+}
+
+# arg1: link to the episode's page
+get_num() {
+    local NAME="$(get_raw_name "$1")"
+    echo "${NAME%%-*}"
+}
+
+# arg1: link to the episode's page
+# arg2: language
+apply_lang() {
+    local hoster="${1##*/}"
+    echo "${1%/*/*}/$2/$hoster"
 }
 
 # Same as download() but for parallel downloading
@@ -192,6 +214,8 @@ main() {
     local WAYBACK_HOSTER=false
     local PROMPT_LAZY=false
     local SLEEP=0
+    local DEBUG=false
+    local BSLANG=de # LANG and LANGUAGE are reserved variables
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -245,6 +269,13 @@ main() {
                 SLEEP=$2
                 shift
                 ;;
+            -c )
+                BSLANG=$2
+                shift
+                ;;
+            -d )
+                DEBUG=true
+                ;;
             * )
                 echo "Unknown option: $1"
                 ;;
@@ -267,25 +298,32 @@ main() {
         warn "CEF (Chromium Embedded Framework) captcha popup not available."
     fi
 
+    $DEBUG && echo "SRC: $SRC"
+
     while read -r line; do
-        local PAGE="https://bs.to/$line"
+        local PAGE="$(apply_lang "https://bs.to/$line" $BSLANG)"
 
         if $WAYBACK; then
             PAGE="$(get_wayback_page "$PAGE")"
         fi
 
         local NAME="$(get_name "$PAGE")"
+        local NUM="$(get_num "$PAGE")"
+
+        $DEBUG && echo "PAGE: $PAGE"
+        $DEBUG && echo "NAME: $NAME"
+        $DEBUG && echo "NUM: $NUM"
 
         # Should the current episode be downloaded?
         if [[ -n "$EPISODES" ]]; then
             # Continue to next episode if not in (inverted) list
-            if [[ ",${EPISODES}," == *",${NAME%%-*},"* ]]; then
+            if [[ ",${EPISODES}," == *",${NUM},"* ]]; then
                 $INVERT && continue
             else
                 $INVERT || continue
             fi
         elif [[ -n "$STARTAT" ]]; then
-            if [[ ${NAME%%-*} -ge $STARTAT ]]; then
+            if [[ $NUM -ge $STARTAT ]]; then
                 $INVERT && continue
             else
                 $INVERT || continue
@@ -303,6 +341,8 @@ main() {
         else
             local URL="$(get_url "$PAGE")"
         fi
+
+        $DEBUG && echo "URL: $URL"
 
         if $WAYBACK; then
             if $WAYBACK_HOSTER; then

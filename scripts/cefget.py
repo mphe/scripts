@@ -7,7 +7,7 @@
 # The main purpose of this script is to ask the user to solve a captcha and
 # grab the destination URL afterwards.
 # Requires cefpython. To install it run:
-#   sudo pip install cefpython3==57.0
+#   sudo pip install cefpython3
 
 
 from cefpython3 import cefpython as cef
