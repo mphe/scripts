@@ -4,6 +4,15 @@
 # Set by check_cef_available
 CEFGET_PATH=
 
+PROXY=178.33.39.70:3128
+
+curlpage() {
+    export http_proxy=$PROXY
+    export https_proxy=$PROXY
+    curl "$@" 
+    # curl --proxy http://178.33.39.70:3128 "$@" 
+}
+
 
 printhelp() {
     local SELF="${0##*/}"
@@ -27,6 +36,8 @@ printhelp() {
     echo -e "\t-s <seconds>\tSleep for a given amount of seconds before extracting another URL. Might reduce captcha complexity."
     echo -e "\t-c <language>\tSpecifies the language. Defaults to 'de'."
     echo -e "\t-d\t\tOutput debug information"
+    echo -e "\t--no-proxy\tDon't use a proxy"
+
     echo -e "\nExamples:"
     echo -e "\t$SELF $EXURL vivo -p"
     echo -e "\n\t$SELF $EXURL vivo -p -m 2 -e 1 -v"
@@ -40,12 +51,12 @@ printhelp() {
 
 # arg1: link to the episode's page
 get_url() {
-    echo "$(curl -s "$1" | grep -i "class=\"hoster-player\"" | sed -r "s/.*href=\"(.+)\".*/\1/" | sed "s/\".*//")"
+    echo "$(curlpage -s "$1" | grep -i "class=\"hoster-player\"" | sed -r "s/.*href=\"(.+)\".*/\1/" | sed "s/\".*//")"
 }
 
 # arg1: link to the episode's page
 get_wayback_page() {
-    echo "$(curl -s "http://archive.org/wayback/available?url=$1" | sed -r "s/.*\"url\":\"(.*)\".*/\1/" | sed "s/\".*//")"
+    echo "$(curlpage -s "http://archive.org/wayback/available?url=$1" | sed -r "s/.*\"url\":\"(.*)\".*/\1/" | sed "s/\".*//")"
 }
 
 # Same as get_url() but works for openload links
@@ -53,7 +64,7 @@ get_wayback_page() {
 # arg1: link to the episode's page
 get_url_openload() {
     get_url "$1"
-    # echo "$(curl -s "$1" | grep -i "bs.to/out" | sed -r "s/.*src='(.+)'.*/\1/" | sed "s/'.*//")"
+    # echo "$(curlpage -s "$1" | grep -i "bs.to/out" | sed -r "s/.*src='(.+)'.*/\1/" | sed "s/'.*//")"
 }
 
 # Adds leading zeros to filename
@@ -153,6 +164,9 @@ check_cef_available() {
 prompt_captcha() {
     local HOSTER="$2"
 
+    export http_proxy=$PROXY
+    export https_proxy=$PROXY
+
     # OpenloadHD links resolve back to openload
     if [[ "${2,,}" == "openloadhd" ]]; then
         HOSTER=openload
@@ -173,7 +187,7 @@ prompt_captcha() {
 # arg1: season link
 # arg2: hoster
 extract_episodes() {
-    local SRC="$(curl -s "$1" | grep -i "$2" | grep -i href | sed -r "s/.*href=\"(.+)\".*/\1/" | sed -r "s/\".*//")"
+    local SRC="$(curlpage -s "$1" | grep -i "$2" | grep -i href | sed -r "s/.*href=\"(.+)\".*/\1/" | sed -r "s/\".*//")"
 
     # There's another hoster OpenloadHD that needs to be filtered out if the
     # desired hoster is the normal Openload
@@ -276,6 +290,9 @@ main() {
             -d )
                 DEBUG=true
                 ;;
+            --no-proxy )
+                PROXY=
+                ;;
             * )
                 echo "Unknown option: $1"
                 ;;
@@ -374,6 +391,9 @@ main() {
     done <<< "$SRC"
 
     # Download
+    $DEBUG && echo "http_proxy: $http_proxy"
+    $DEBUG && echo "https_proxy: $https_proxy"
+
     if [[ $EXTRACTONLY -eq 0 ]]; then
         for i in "${!URLS[@]}"; do
             if $PARALLEL; then
