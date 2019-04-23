@@ -4,13 +4,16 @@
 # Set by check_cef_available
 CEFGET_PATH=
 
-PROXY=178.33.39.70:3128
+# PROXY=5.148.128.44:80
+PROXY=
+DOH_SERVER='https://mozilla.cloudflare-dns.com/dns-query'
+BASEURL=burningseries.co
 
 curlpage() {
-    export http_proxy=$PROXY
-    export https_proxy=$PROXY
-    curl "$@" 
-    # curl --proxy http://178.33.39.70:3128 "$@" 
+    # export http_proxy=$PROXY
+    # export https_proxy=$PROXY
+    # curl "$@" 
+    curl --doh-url "$DOH_SERVER" "$@" 
 }
 
 
@@ -59,14 +62,6 @@ get_wayback_page() {
     echo "$(curlpage -s "http://archive.org/wayback/available?url=$1" | sed -r "s/.*\"url\":\"(.*)\".*/\1/" | sed "s/\".*//")"
 }
 
-# Same as get_url() but works for openload links
-# Not needed anymore, but keep it in case it changes back in future.
-# arg1: link to the episode's page
-get_url_openload() {
-    get_url "$1"
-    # echo "$(curlpage -s "$1" | grep -i "bs.to/out" | sed -r "s/.*src='(.+)'.*/\1/" | sed "s/'.*//")"
-}
-
 # Adds leading zeros to filename
 # arg1: link to the episode's page
 get_name() {
@@ -106,6 +101,8 @@ download_p() {
 # arg2: name
 # arg3: skip on error (true/false)
 download() {
+    export http_proxy=
+    export https_proxy=
     log "Downloading" "$2 ( $1 )"
     until youtube-dl -o "$2.%(ext)s" -R 50 "$1" || $3; do
         :
@@ -172,7 +169,7 @@ prompt_captcha() {
         HOSTER=openload
     fi
 
-    if [[ "$1" =~ bs.to/out/.* ]]; then
+    if [[ "$1" =~ bs.to/out/.* ]] || [[ "$1" =~ $BASEURL/out/.* ]]; then
         local NEWURL
         NEWURL="$("$CEFGET_PATH" "$1" "$HOSTER")"
         if [[ $? -eq 0 ]]; then
@@ -186,6 +183,7 @@ prompt_captcha() {
 # Download the page and extract each episode's link
 # arg1: season link
 # arg2: hoster
+# Outputs only the part of the url after https://bs.to/
 extract_episodes() {
     local SRC="$(curlpage -s "$1" | grep -i "$2" | grep -i href | sed -r "s/.*href=\"(.+)\".*/\1/" | sed -r "s/\".*//")"
 
@@ -318,7 +316,9 @@ main() {
     $DEBUG && echo "SRC: $SRC"
 
     while read -r line; do
-        local PAGE="$(apply_lang "https://bs.to/$line" $BSLANG)"
+        # Since extract_episodes returns only relative links, we can make
+        # sure that after this line, all links use $BASEURL.
+        local PAGE="$(apply_lang "https://$BASEURL/$line" $BSLANG)"
 
         if $WAYBACK; then
             PAGE="$(get_wayback_page "$PAGE")"
@@ -351,13 +351,7 @@ main() {
             log "Extracting" "$NAME"
         fi
 
-        # Videos hosted on openload are embeded directly in the page and
-        # thus need to be handled differently.
-        if [[ "${HOSTER,,}" == "openload" ]]; then
-            local URL="$(get_url_openload "$PAGE")"
-        else
-            local URL="$(get_url "$PAGE")"
-        fi
+        local URL="$(get_url "$PAGE")"
 
         $DEBUG && echo "URL: $URL"
 
