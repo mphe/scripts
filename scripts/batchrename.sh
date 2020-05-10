@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 printhelp() {
     echo "Opens the given paths in vim and uses the resulting filelist to batch rename these files."

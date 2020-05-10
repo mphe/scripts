@@ -13,15 +13,31 @@
 from cefpython3 import cefpython as cef
 import sys
 import os
+# import threading
 
 urlfound = False
+
+
+# timer = threading.Timer()
 
 def OnLoadingStateChange(browser, is_loading, **_):
     global urlfound
     if not urlfound and sys.argv[2] in browser.GetUrl():
+        # print("OnLoadingStateChange")
         print(browser.GetUrl())
         urlfound = True
+        browser.StopLoad()
         browser.CloseBrowser()
+
+def OnLoadStart(browser, frame):
+    global urlfound
+    if not urlfound and sys.argv[2] in frame.GetUrl():
+        # print("OnLoadStart")
+        print(frame.GetUrl())
+        urlfound = True
+        browser.StopLoad()
+        browser.CloseBrowser()
+
 
 def DoClose(browser):
     cef.QuitMessageLoop()
@@ -36,14 +52,16 @@ def main():
     sys.excepthook = cef.ExceptHook
     cef.Initialize({
         "cache_path": os.getenv("HOME") + "/.cache/cefget",
-        "multi_threaded_message_loop": False
+        "multi_threaded_message_loop": False,
+        "log_severity": cef.LOGSEVERITY_DISABLE,
     })
 
     browser = cef.CreateBrowserSync(url=sys.argv[1], window_title=sys.argv[1])
-    browser.SetClientCallback("OnLoadingStateChange", OnLoadingStateChange)
+    # browser.SetClientCallback("OnLoadingStateChange", OnLoadingStateChange)
+    browser.SetClientCallback("OnLoadStart", OnLoadStart)
     browser.SetClientCallback("DoClose", DoClose)
     cef.MessageLoop()
-    browser = None
+    del browser
 
     cef.Shutdown()
 

@@ -3,13 +3,15 @@
 # Requirements: http://www.fmwconcepts.com/imagemagick/videoglitch/index.php
 # 	            Imagemagick
 
+cd "$(dirname "$(readlink -f "$0")")" || exit 1
+
 # Wait a bit so popup menus can close
-sleep 0.1
+sleep 0.5
 
 scrot /tmp/screen.png
 # convert /tmp/screen.png -scale 10% -scale 1000% /tmp/screen.png
 # videoglitch -n 20 -j 10 -c red-cyan /tmp/screen.png /tmp/screen.png
-videoglitch -n 20 /tmp/screen.png /tmp/screen.png
+./videoglitch -n 20 /tmp/screen.png /tmp/screen.png
 
 if [[ -f $HOME/.config/lock.png ]]
 then
@@ -38,3 +40,4 @@ then
 fi
 
 i3lock -e -i /tmp/screen.png
+rm /tmp/screen.png

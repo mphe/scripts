@@ -10,7 +10,7 @@ main() {
     echo "John Cena"
     sleep 1.5
 
-    xdg-open /tmp/cena.jpg
+    eom -f /tmp/cena.jpg
     kill $!
 }
 

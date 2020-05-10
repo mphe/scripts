@@ -51,7 +51,7 @@ paste() {
 
     case "$op" in
         copy )
-            cmd=cp
+            cmd="cp -r"
             ;;
         cut )
             cmd=mv

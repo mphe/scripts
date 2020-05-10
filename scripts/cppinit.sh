@@ -137,12 +137,29 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY \${CMAKE_BINARY_DIR}/lib)"
 set(SFML_ROOT \"\" CACHE PATH \"SFML library directory (optional)\")"
 
 echo -e "
+# Set default build type to Debug
+if (NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Debug CACHE STRING "Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel." FORCE)
+endif()
+
 option(${UPPERNAME}_BUILD_TESTS \"Build tests\" ON)
 option(USE_CCACHE \"Use ccache if available\" ON)
 
 # Enable warnings and colored compiler output
 if (CMAKE_COMPILER_IS_GNUCC)
-    add_definitions(-Wall -Wno-switch -fdiagnostics-color=auto)
+    add_definitions(
+        -Wall
+        -Wextra
+        -Wno-switch
+        -Wno-sign-compare
+        -Wno-parentheses
+        -Wsuggest-override
+        -Wsuggest-final-methods
+        -Wsuggest-final-types
+        -Werror=suggest-override
+        -Werror=return-type
+        -fdiagnostics-color=always
+    )
 elseif (MSVC)
     # Untested
     add_definitions(/W3)

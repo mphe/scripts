@@ -1,0 +1,7 @@
+#!/bin/bash
+
+if [[ "$1" == *\.bak ]]; then
+    mv "$1" "${1%.bak}"
+else
+    mv "$1" "$1.bak"
+fi
