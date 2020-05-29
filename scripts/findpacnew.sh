@@ -11,9 +11,9 @@ elif [[ "$1" == "-l" ]] || [[ "$1" == "--list" ]]; then
 else
     dowork () {
         if which nvim > /dev/null 2>&1; then
-            nvim -d "$(echo $1 | sed s/.pacnew$//)" "$1"
+            EDITOR='nvim -d' sudo -e "$(echo $1 | sed s/.pacnew$//)" "$1"
         else
-            vimdiff "$(echo $1 | sed s/.pacnew$//)" "$1"
+            EDITOR=vimdiff sudo -e "$(echo $1 | sed s/.pacnew$//)" "$1"
         fi
 
         read -p "Remove $1 ? [y/n] " -n 1 -r
