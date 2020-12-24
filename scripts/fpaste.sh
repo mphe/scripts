@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# TODO: Consider changing syntax to
+# $ fpaste mark files...
+# $ fpaste cut/copy/link
+# instead of specifying the operation beforehand
+
 FNAME="/dev/shm/file_move_script_308b12b3-0302-401b-a68f-d5149aeaf976"
 
 printhelp() {
@@ -9,6 +14,7 @@ printhelp() {
     echo -e "\thelp\tShow help"
     echo -e "\tcut\tMark files to be moved"
     echo -e "\tcopy\tMark files to be copied"
+    echo -e "\tlink\tMark files to be symlinked"
     echo -e "\tpaste\tPaste marked files"
     echo -e "\tclear\tUnmark all files"
     echo -e "\tlist\tShow marked files and the operation to do"
@@ -17,11 +23,12 @@ printhelp() {
 # arg1: operation
 # argN: files
 mark() {
+    # Write operation to use
     echo "$1" > "$FNAME"
     shift
 
     for i in "$@"; do
-        echo "$(realpath "$i")" >> "$FNAME"
+        realpath "$i" >> "$FNAME"
     done
 }
 
@@ -35,9 +42,7 @@ list() {
 }
 
 clearlist() {
-    if [ -f "$FNAME" ]; then
-        rm "$FNAME"
-    fi
+    [ -f "$FNAME" ] && rm "$FNAME"
 }
 
 paste() {
@@ -46,6 +51,7 @@ paste() {
         exit 1
     fi
 
+    # shellcheck disable=SC2155
     local op="$(head -n 1 "$FNAME")"
     local cmd=
 
@@ -54,7 +60,10 @@ paste() {
             cmd="cp -r"
             ;;
         cut )
-            cmd=mv
+            cmd="mv"
+            ;;
+        link )
+            cmd="ln -s"
             ;;
         * )
             echo "Unrecognized operation: $cmd"
@@ -81,11 +90,8 @@ OP="$1"
 shift
 
 case "$OP" in
-    copy )
-        mark copy "$@"
-        ;;
-    cut )
-        mark cut "$@"
+    copy|cut|link )
+        mark "$OP" "$@"
         ;;
     list )
         list
@@ -105,3 +111,4 @@ case "$OP" in
         ;;
 esac
 
+exit 0
