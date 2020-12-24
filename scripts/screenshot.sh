@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Requires notify-send.py
+# Requires notify-send.py (pip)
 
 save_file() {
     if [ -z "$FILENAME" ]; then
