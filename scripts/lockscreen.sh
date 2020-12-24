@@ -1,7 +1,7 @@
 #!/bin/bash
 # Adapted from https://github.com/michael-kaiser/dotfiles/blob/master/i3/lockscreen.sh
 # Requirements: http://www.fmwconcepts.com/imagemagick/videoglitch/index.php
-# 	            Imagemagick
+# 	            Imagemagick, maim
 
 cd "$(dirname "$(readlink -f "$0")")" || exit 1
 
@@ -19,7 +19,8 @@ main() {
     trap "cleanup; exit 1" 2     # INT
     trap "cleanup; exit 1" 1 15  # HUP TERM
 
-    scrot --overwrite "$IMAGE_PATH"
+    # scrot --overwrite "$IMAGE_PATH"
+    maim "$IMAGE_PATH"
 
     # Start i3lock with the current screen image and restart later when the
     # actual image is ready
