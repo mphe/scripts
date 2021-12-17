@@ -4,6 +4,7 @@ INTERVAL=1
 LASTCLIP=""
 URLS=""
 MAXJOBS=6
+DOWNLOADER=youtube-dl  # Also supports wget
 
 question() {
     local ANS
@@ -36,7 +37,7 @@ add_url() {
     fi
     echo -e "URL added: $1"
 
-    if ${2:-true}; then
+    if ${2:-true} && [ "$DOWNLOADER" == "youtube-dl" ]; then
         echo -e "\t$(youtube-dl -e "$1")" &
     fi
 }
@@ -73,6 +74,13 @@ dump() {
 }
 
 main() {
+    if [ "$1" == "wget" ] || [ "$1" == "youtube-dl" ]; then
+        DOWNLOADER="$1"
+        shift
+    fi
+
+    echo "Using $DOWNLOADER as downloader"
+
     if [ -n "$1" ]; then
         echo "Loading URLs from file $1"
         if [[ -f "$1" ]]; then
@@ -113,7 +121,7 @@ main() {
     fi
 
     echo "Downloading..."
-    echo -e "$URLS" | parallel -u --jobs $MAXJOBS --max-args=1 youtube-dl
+    echo -e "$URLS" | parallel -u --jobs $MAXJOBS --max-args=1 "$@" "$DOWNLOADER"
     local err=$?
     [ "$err" -ne 0 ] && exit $err
 

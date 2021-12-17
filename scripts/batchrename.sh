@@ -1,7 +1,10 @@
 #!/bin/bash
+# shellcheck disable=SC2155
+
+EDITOR=${EDITOR:-vim}
 
 printhelp() {
-    echo "Opens the given paths in vim and uses the resulting filelist to batch rename these files."
+    echo "Opens the given paths in $EDITOR and uses the resulting filelist to batch rename these files."
     echo -e "Usage:\n\t${0##*/} [options] files"
     echo -e "\nOptions:"
     echo -e "\t-h, --help\tShow help"
@@ -12,8 +15,8 @@ printhelp() {
 
 printedithelp() {
     echo "These are the destination file names."
-    echo "You can edit them and the new names are applied automatically after the file is closed. Don't forget to save."
-    echo "Empty lines are ignored."
+    echo "You can edit them and the new names are applied automatically after the file is closed."
+    echo "Don't forget to save. Empty lines are ignored."
     echo "To ignore a file, simply leave its path and name as it is."
     echo "Don't touch these 5 help lines! They will be removed automatically!"
     echo
@@ -34,7 +37,7 @@ join() {
         fi
         shift
     done
-    echo $LEN
+    echo "$LEN"
 }
 
 cleanup() {
@@ -56,6 +59,7 @@ main() {
                 exit
                 ;;
             -c|--copy )
+                # shellcheck disable=SC2209
                 COMMAND=cp
                 ;;
             -d|--dry )
@@ -78,18 +82,18 @@ main() {
     fi
 
     FILELIST=$(mktemp /dev/shm/batchrename.XXXXXXXX)
-    printedithelp > $FILELIST
-    local LEN=$(join $FILELIST "$@")
+    printedithelp > "$FILELIST"
+    local LEN=$(join "$FILELIST" "$@")
 
     while true; do
-        vim $FILELIST
+        $EDITOR "$FILELIST"
 
         # Strip help and remove empty lines
-        local NEWFILELIST="$(cat $FILELIST | tail -n +$(printedithelp | wc -l) | grep -v '^$')"
+        local NEWFILELIST="$(tail -n +"$(printedithelp | wc -l)" "$FILELIST" | grep -v '^$')"
 
-        if [ -z "$NEWFILELIST" ] || [ $LEN -ne $(echo "$NEWFILELIST" | wc -l) ]; then
+        if [ -z "$NEWFILELIST" ] || [ "$LEN" -ne "$(echo "$NEWFILELIST" | wc -l)" ]; then
             echo "Error: Filelist length doesn't match input filelist length!"
-            
+
             local REPLY=
             until [[ $REPLY =~ ^[AaEeCc]$ ]]; do
                 read -p "Append orignal list and edit, only edit, or cancel?  [a/A/e/E/c/C] " -n 1 -r
@@ -99,10 +103,12 @@ main() {
             if [[ $REPLY =~ ^[Cc]$ ]]; then
                 exit 1
             elif [[ $REPLY =~ ^[Aa]$ ]]; then
-                echo >> $FILELIST
-                echo "This is the original filelist." >> $FILELIST
-                echo "THESE 2 LINES AND THE FILELIST MUST BE REMOVED MANUALLY!" >> $FILELIST
-                join $FILELIST "$@"
+                {
+                    echo
+                    echo "This is the original filelist."
+                    echo "THESE 2 LINES AND THE FILELIST MUST BE REMOVED MANUALLY!"
+                } >> "$FILELIST"
+                join "$FILELIST" "$@"
             fi
         else
             break
@@ -112,7 +118,8 @@ main() {
     while [ $# -gt 0 ] && IFS= read -r line; do
         if [ "$1" != "$line" ]; then
             # TODO : Check for overwriting (mv -vi doesn't work because of stdin interference)
-            $DRY && echo "$1 -> $line" || $COMMAND -v "$1" "$line"
+            $DRY && echo "$1 -> $line"
+            $DRY || $COMMAND -v "$1" "$line"
         fi
         shift
     done <<< "$NEWFILELIST"

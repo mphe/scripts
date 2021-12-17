@@ -37,7 +37,7 @@ trap "rm -f '$TMPFILE'" 0               # EXIT
 trap "rm -f '$TMPFILE'; exit 1" 2       # INT
 trap "rm -f '$TMPFILE'; exit 1" 1 15    # HUP TERM
 
-ANS="$(notify-send.py -i "$TMPFILE" -t 0 test --action save:Save "copy:Copy to clipboard" both:Both | head -n 1)"
+ANS="$(notify-send.py -i "$TMPFILE" -t 0 test --action save:Save "copy:Copy to clipboard" both:Both discard:Discard | head -n 1)"
 
 case $ANS in
     save )
@@ -49,5 +49,7 @@ case $ANS in
     both )
         clipboard
         save_file
+        ;;
+    discard )
         ;;
 esac
