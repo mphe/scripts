@@ -21,8 +21,8 @@ main() {
 		exit 1
 	fi
 
-	pdf="$PWD/$pdf"
-	out_pdf="$PWD/$out_pdf"
+	pdf="$(realpath "$pdf")"
+	out_pdf="$(realpath "$out_pdf")"
 
 	trap cleanup 0               # EXIT
 	trap "cleanup; exit 1" 2     # INT
