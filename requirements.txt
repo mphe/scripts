@@ -1,0 +1,2 @@
+# Used in scripts/screenshot.sh for system messages
+notify_send_py
